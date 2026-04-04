@@ -8,18 +8,21 @@
 import SwiftUI
 import Foundation
 import CoreBluetooth
+import Combine
 
 import os.log
 
 let logger = Logger(subsystem: "KlipschControl", category: "Speaker")
 
-let DEVICE_NAME = "Klipsch The Three Plus"
+let DEVICE_NAME = "Klipsch The Fives"
 
 class Speaker: NSObject, CBCentralManagerDelegate, CBPeripheralDelegate, ObservableObject {
     
     let VOLUME_UUID = "DA6D0FA2-0D18-442C-BABE-F85B5BAA6F11"
     let POWER_UUID = "DA6D0FE7-0D18-442C-BABE-F85B5BAA6F11"
     let INPUT_UUID = "DA6D0FD2-0D18-442C-BABE-F85B5BAA6F11"
+    
+    let objectWillChange = ObservableObjectPublisher()
     
     // Publish so our view is updated
     @Published var bluetoothReady = false
@@ -222,7 +225,8 @@ class Speaker: NSObject, CBCentralManagerDelegate, CBPeripheralDelegate, Observa
     }
     
     func volume(data: Data) {
-        ensureOn()
+//        ensureOn()
+        print("Characteristics: \(self.characteristics)")
         self.connectedPeripheral?.setNotifyValue(true, for: self.characteristics[VOLUME_UUID]!)
         self.connectedPeripheral?.writeValue(data, for: self.characteristics[VOLUME_UUID]!, type: .withResponse)
     }

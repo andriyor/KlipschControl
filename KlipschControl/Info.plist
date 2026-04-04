@@ -6,9 +6,5 @@
 	<array>
 		<string>bluetooth-central</string>
 	</array>
-	<key>NSBluetoothAlwaysUsageDescription</key>
-	<string>Our app uses Bluetooth to connect with other devices.</string>
-	<key>NSBluetoothPeripheralUsageDescription</key>
-	<string>Our app uses Bluetooth to connect with other devices.</string>
 </dict>
 </plist>
