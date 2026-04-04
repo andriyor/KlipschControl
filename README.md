@@ -23,3 +23,9 @@ With this in mind, I settled on building a very simple app to act as a remote co
 In order to remain a simple remote control, I've implemented a subset of features of the official app.
 Because of this, it will be of little use even to other Klipsch The Three Plus owners.
 For example, it only support the inputs I use (Digital and USB Computer).
+
+
+# TODO
+
+- [ ] read volume level from a speaker
+- [x] fix bluetooth connection
