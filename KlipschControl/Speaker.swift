@@ -253,8 +253,8 @@ class Speaker: NSObject, CBCentralManagerDelegate, CBPeripheralDelegate, Observa
         }
 
         if characteristic.uuid.uuidString == VOLUME_UUID {
-            guard let data = characteristic.value else { return }
-            let integerValue = data.withUnsafeBytes { $0.load(as: UInt8.self) }
+            // Ignore empty values instead of storing them as the volume
+            guard let data = characteristic.value, let integerValue = data.first else { return }
             let percentage = Int((Double(integerValue) / 36.0) * 100.0)
             print("volume: \(integerValue) (\(percentage)%)")
             volume = data
@@ -303,23 +303,23 @@ class Speaker: NSObject, CBCentralManagerDelegate, CBPeripheralDelegate, Observa
     }
     
     func switchInput(_ input: Input) {
-        self.connectedPeripheral?.writeValue(Data([input.rawValue]), for: self.characteristics[INPUT_UUID]!, type: .withResponse)
+        guard deviceReady, let characteristic = characteristics[INPUT_UUID] else { return }
+        self.connectedPeripheral?.writeValue(Data([input.rawValue]), for: characteristic, type: .withResponse)
     }
     
     func volumeUp() {
-        let integerValue = self.volume.withUnsafeBytes { $0.load(as: UInt8.self) }
-        guard integerValue < MAX_VOLUME else { return }
+        guard let integerValue = self.volume.first, integerValue < MAX_VOLUME else { return }
         volume(data: Data([integerValue + 1]))
     }
 
     func volumeDown() {
-        let integerValue = self.volume.withUnsafeBytes { $0.load(as: UInt8.self) }
-        guard integerValue > 0 else { return }
+        guard let integerValue = self.volume.first, integerValue > 0 else { return }
         volume(data: Data([integerValue - 1]))
     }
     
     func volume(data: Data) {
         print("Characteristics: \(self.characteristics)")
-        self.connectedPeripheral?.writeValue(data, for: self.characteristics[VOLUME_UUID]!, type: .withResponse)
+        guard deviceReady, let characteristic = characteristics[VOLUME_UUID] else { return }
+        self.connectedPeripheral?.writeValue(data, for: characteristic, type: .withResponse)
     }
 }

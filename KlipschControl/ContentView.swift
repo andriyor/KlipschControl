@@ -56,6 +56,7 @@ struct ContentView: View {
                 .animation(.easeInOut(duration: 0.15), value: selected)
             }
         }.padding()
+        .disabled(!speaker.deviceReady)
         
         VStack {
             Text("Volume (\(Int(sliderValue) * 100 / Int(speaker.MAX_VOLUME))%)").font(.title3).bold()
@@ -82,9 +83,10 @@ struct ContentView: View {
                 }
             }
         }.padding()
+        .disabled(!speaker.deviceReady)
         .onChange(of: speaker.volume, initial: true) {
-            if !isDragging {
-                sliderValue = Double(speaker.volume.withUnsafeBytes { $0.load(as: UInt8.self) })
+            if !isDragging, let value = speaker.volume.first {
+                sliderValue = Double(value)
             }
         }
         
