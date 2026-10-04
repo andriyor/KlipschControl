@@ -20,6 +20,7 @@ It is a fork of [wleese/KlipschControl](https://github.com/wleese/KlipschControl
 * Volume: slider plus −/+ buttons, shown as a percentage; follows the speaker's knob and remote live
 * Input: TV, Bluetooth, Optical, USB, Analog and Phono; the active input is highlighted and follows the speaker's remote
 * EQ presets: Flat, Vocal, Bass, Rock and Boom (shows Custom when the EQ was set to something else)
+* Dynamic Bass and Night Mode switches
 * Controls stay disabled until the speaker is ready
 
 ## How did we get here?
@@ -38,7 +39,7 @@ With this in mind, they settled on building a very simple app to act as a remote
 | connect time             | ~15 s, regularly fails to find the speaker              | ~6 s                                                                                                   | ~4 s                                                                    |
 | volume                   | yes                                                     | yes, follows the knob                                                                                  | slider + −/+, follows the knob                                          |
 | input                    | yes                                                     | yes                                                                                                    | yes                                                                     |
-| EQ / modes               | yes                                                     | 3-band EQ + presets, Dynamic Bass, Night Mode, placement                                               | EQ presets (no sliders)                                                 |
+| EQ / modes               | yes                                                     | 3-band EQ + presets, Dynamic Bass, Night Mode, placement                                               | EQ presets (no sliders), Dynamic Bass, Night Mode                       |
 | sub / transport          | yes                                                     | sub level / mute / phase, play-pause / next / previous                                                 | no                                                                      |
 | device settings          | rename, standby, firmware update, setup                 | rename, auto standby, about, factory reset; no firmware update                                         | no                                                                      |
 | speakers                 | soundbars, One / Three Plus, T5 earbuds, The Fives, ... | The Fives / Sevens / Nines                                                                             | The Fives (device name `Klipsch The Fives` is hardcoded)                |
@@ -48,7 +49,7 @@ In short: use the official app for firmware updates and first setup, KlipschRemo
 ## Limitations
 
 * Only The Fives is supported, and the device name `Klipsch The Fives` is hardcoded in `Speaker.swift`.
-* Only volume, input and EQ presets are implemented; no EQ sliders, Dynamic Bass, Night Mode, subwoofer or device settings.
+* Only volume, input, EQ presets, Dynamic Bass and Night Mode are implemented; no EQ sliders, speaker placement, subwoofer or device settings.
 * Switching from Bluetooth to another input and back drops the phone's audio connection: the speaker's Bluetooth light blinks and you have to reconnect it in iOS Settings → Bluetooth. This is the speaker's firmware: it happens with the official app and KlipschRemote too, while switching with the speaker's own knob reconnects audio by itself. iOS apps can't start an audio connection, so the app can't fix it. The app's own control connection is not affected.
 * Changing the input with the speaker's knob doesn't notify the app, so the highlighted input only updates on the next connect (changes from the IR remote do show up).
 
@@ -59,5 +60,5 @@ In short: use the official app for firmware updates and first setup, KlipschRemo
 - [x] input switching for The Fives
 - [x] EQ presets
 - [ ] EQ sliders for bass, mid and treble
-- [ ] Dynamic Bass, Night Mode (port from KlipschRemote `klipsch_ble/constants.py`)
+- [x] Dynamic Bass, Night Mode
 - [ ] fix the background disconnect timer running off the main thread
