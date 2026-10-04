@@ -20,8 +20,10 @@ struct Card<Content: View>: View {
       HStack {
         Label(title, systemImage: icon).font(.headline)
         if let info {
+          Spacer()
           Button(action: { showInfo = true }) {
-            Image(systemName: "info.circle").frame(width: 44, height: 44)
+            // Icon on the trailing edge, in line with switches below; the tap area extends left
+            Image(systemName: "info.circle").frame(width: 44, height: 44, alignment: .trailing)
           }
           .accessibilityLabel("About \(title)")
           // Without the adaptation, iPhone shows the popover as a full sheet
