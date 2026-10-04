@@ -87,6 +87,9 @@ class Speaker: NSObject, CBCentralManagerDelegate, CBPeripheralDelegate, Observa
         "DA6D0F03-0D18-442C-BABE-F85B5BAA6F11",
         "DA6D0F04-0D18-442C-BABE-F85B5BAA6F11",
     ]
+    // On/off modes in the EQ service; one byte, 0 or 1
+    let NIGHT_MODE_UUID = "DA6D0F05-0D18-442C-BABE-F85B5BAA6F11"
+    let DYNAMIC_BASS_UUID = "DA6D0F14-0D18-442C-BABE-F85B5BAA6F11"
     let MAX_VOLUME: UInt8 = 36
     
     @Published var bluetoothReady = false
@@ -94,6 +97,8 @@ class Speaker: NSObject, CBCentralManagerDelegate, CBPeripheralDelegate, Observa
     @Published var volume: UInt8 = 1
     @Published var activeInput: Input?
     @Published var eqLevels: [String: Int] = [:]
+    @Published var nightMode = false
+    @Published var dynamicBass = false
     @Published var statusText = "Disconnected"
     
     var UUIDS: [String] = []
@@ -106,7 +111,7 @@ class Speaker: NSObject, CBCentralManagerDelegate, CBPeripheralDelegate, Observa
     
     override init() {
         super.init()
-        UUIDS = [VOLUME_UUID, INPUT_UUID] + EQ_UUIDS
+        UUIDS = [VOLUME_UUID, INPUT_UUID, NIGHT_MODE_UUID, DYNAMIC_BASS_UUID] + EQ_UUIDS
         centralManager = CBCentralManager(delegate: self, queue: DispatchQueue.main, options: [CBCentralManagerOptionRestoreIdentifierKey: DEVICE_NAME])
     }
     
@@ -274,6 +279,11 @@ class Speaker: NSObject, CBCentralManagerDelegate, CBPeripheralDelegate, Observa
         if EQ_UUIDS.contains(characteristic.uuid.uuidString), let byte = characteristic.value?.first {
             eqLevels[characteristic.uuid.uuidString] = Int(byte) - 10
         }
+
+        if let byte = characteristic.value?.first {
+            if characteristic.uuid.uuidString == NIGHT_MODE_UUID { nightMode = byte != 0 }
+            if characteristic.uuid.uuidString == DYNAMIC_BASS_UUID { dynamicBass = byte != 0 }
+        }
     }
     
     func centralManager(_ central: CBCentralManager, didFailToConnect peripheral: CBPeripheral, error: Error?) {
@@ -327,6 +337,23 @@ class Speaker: NSObject, CBCentralManagerDelegate, CBPeripheralDelegate, Observa
             // The speaker may not notify EQ changes, so show the preset right away
             eqLevels[uuid] = level
         }
+    }
+
+    func setNightMode(_ on: Bool) {
+        guard writeToggle(NIGHT_MODE_UUID, on) else { return }
+        nightMode = on
+    }
+
+    func setDynamicBass(_ on: Bool) {
+        guard writeToggle(DYNAMIC_BASS_UUID, on) else { return }
+        dynamicBass = on
+    }
+
+    // Like EQ, shown right away since the speaker may not notify these changes
+    private func writeToggle(_ uuid: String, _ on: Bool) -> Bool {
+        guard deviceReady, let characteristic = characteristics[uuid] else { return false }
+        connectedPeripheral?.writeValue(Data([on ? 1 : 0]), for: characteristic, type: .withResponse)
+        return true
     }
 
     func volumeUp() {
