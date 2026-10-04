@@ -76,7 +76,8 @@ struct ContentView: View {
 
   private var cards: some View {
     VStack(spacing: 16) {
-      Card(title: "EQ (\(speaker.activePreset?.label ?? "Custom"))", icon: "slider.vertical.3") {
+      // The picker highlights the active preset; the title only explains when none is highlighted
+      Card(title: speaker.activePreset == nil ? "EQ (Custom)" : "EQ", icon: "slider.vertical.3") {
         Picker(
           "EQ",
           selection: Binding(
