@@ -35,7 +35,7 @@ enum Input: UInt8, CaseIterable {
     var icon: String {
         switch self {
         case .tv: "tv"
-        case .bluetooth: "dot.radiowaves.left.and.right"
+        case .bluetooth: "dot.radiowaves.left.and.right" // unused: the tile draws BluetoothRune
         case .optical: "fibrechannel"
         case .usb: "cable.connector"
         case .aux: "cable.coaxial"

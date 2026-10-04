@@ -46,7 +46,13 @@ struct ContentView: View {
                                     if !selected { speaker.switchInput(input) }
                                 }) {
                                     VStack(spacing: 6) {
-                                        Image(systemName: input.icon).font(.title2)
+                                        if input == .bluetooth {
+                                            BluetoothRune()
+                                                .stroke(style: StrokeStyle(lineWidth: 2.2, lineCap: .round, lineJoin: .round))
+                                                .frame(width: 26, height: 26)
+                                        } else {
+                                            Image(systemName: input.icon).font(.title2).frame(height: 26)
+                                        }
                                         Text(input.label).font(.caption).fontWeight(selected ? .bold : .regular)
                                     }
                                     .frame(maxWidth: .infinity)
@@ -123,6 +129,19 @@ struct ContentView: View {
             .padding()
         }
         .background(Color(.systemGroupedBackground).ignoresSafeArea())
+    }
+}
+
+// SF Symbols has no Bluetooth logo, so draw the rune. Path is the Feather "bluetooth" icon
+// (MIT) on a 24x24 grid, scaled to fit.
+private struct BluetoothRune: Shape {
+    func path(in rect: CGRect) -> Path {
+        let scale = min(rect.width, rect.height) / 24
+        let origin = CGPoint(x: rect.midX - 12 * scale, y: rect.midY - 12 * scale)
+        let points: [(CGFloat, CGFloat)] = [(6.5, 6.5), (17.5, 17.5), (12, 23), (12, 1), (17.5, 6.5), (6.5, 17.5)]
+        var path = Path()
+        path.addLines(points.map { CGPoint(x: origin.x + $0.0 * scale, y: origin.y + $0.1 * scale) })
+        return path
     }
 }
 
