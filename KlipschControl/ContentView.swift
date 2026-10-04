@@ -19,18 +19,23 @@ struct ContentView: View {
     var body: some View {
         ScrollView {
             VStack(spacing: 16) {
-                VStack(spacing: 8) {
-                    Text(speaker.modelName ?? "Speaker").font(.title).bold()
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(speaker.modelName ?? "Speaker").font(.largeTitle).bold()
 
-                    Image(systemName: "speaker.3.fill")
-                        .font(.system(size: 80))
-                        .foregroundColor(speaker.deviceReady ? .green : .red)
-
-                    Text(speaker.statusText)
+                    // Tap to search for the speaker again
+                    Button(action: { speaker.triggerScan() }) {
+                        HStack(spacing: 6) {
+                            Circle()
+                                .fill(speaker.deviceReady ? Color.green : Color.orange)
+                                .frame(width: 8, height: 8)
+                            Text(speaker.statusText)
+                        }
+                        .font(.subheadline)
                         .foregroundStyle(.secondary)
-                        .onTapGesture { speaker.triggerScan() }
+                    }
                 }
-                .padding(.vertical)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(.top)
 
                 VStack(spacing: 16) {
                     Card(title: "Input", icon: "rectangle.on.rectangle") {
