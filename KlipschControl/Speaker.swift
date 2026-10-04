@@ -74,6 +74,9 @@ class Speaker: NSObject, CBCentralManagerDelegate, CBPeripheralDelegate, Observa
     }
     
     func triggerScan() {
+        // Also called when the app becomes active; keep the "Bluetooth not ready" status until
+        // centralManagerDidUpdateState reports poweredOn and calls this again
+        guard bluetoothReady else { return }
         self.statusText = "Looking for speaker"
         logger.info("triggerScan called; bluetoothReady: \(self.bluetoothReady), connected: \(self.connectedPeripheral != nil)")
         

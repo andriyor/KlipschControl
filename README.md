@@ -22,7 +22,7 @@ It is a fork of [wleese/KlipschControl](https://github.com/wleese/KlipschControl
 * EQ: presets Flat, Vocal, Bass, Rock and Boom, plus bass, mid and treble sliders (−10 to +6); shows Custom when the bands don't match a preset
 * Dynamic Bass and Night Mode switches
 * Shows the speaker model (The Fives, Sevens, Nines or a McLaren edition) in the header, read from the speaker's Device Information service
-* Controls stay disabled until the speaker is ready
+* Until the speaker is ready, shows a connecting or Bluetooth-off placeholder instead of the controls
 
 ## How did we get here?
 
