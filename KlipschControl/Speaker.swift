@@ -44,6 +44,32 @@ enum Input: UInt8, CaseIterable {
     }
 }
 
+// EQ presets from KlipschRemote, as (bass, mid, treble) levels in -10...+6. The speaker's own
+// preset characteristic errors on this line, so a preset just writes the three bands.
+enum EQPreset: CaseIterable {
+    case flat, vocal, bass, rock, boom
+
+    var label: String {
+        switch self {
+        case .flat: "Flat"
+        case .vocal: "Vocal"
+        case .bass: "Bass"
+        case .rock: "Rock"
+        case .boom: "Boom"
+        }
+    }
+
+    var levels: [Int] {
+        switch self {
+        case .flat: [0, 0, 0]
+        case .vocal: [-3, 6, 0]
+        case .bass: [6, 0, 0]
+        case .rock: [3, -1, 3]
+        case .boom: [6, -10, -10]
+        }
+    }
+}
+
 let logger = Logger(subsystem: "KlipschControl", category: "Speaker")
 
 let DEVICE_NAME = "Klipsch The Fives"
@@ -54,12 +80,20 @@ class Speaker: NSObject, CBCentralManagerDelegate, CBPeripheralDelegate, Observa
     let INPUT_UUID = "DA6D0FD2-0D18-442C-BABE-F85B5BAA6F11"
     let SERVICE_UUID = "DA6D0FA1-0D18-442C-BABE-F85B5BAA6F11"
     let INPUT_SERVICE_UUID = "DA6D0FD1-0D18-442C-BABE-F85B5BAA6F11"
+    let EQ_SERVICE_UUID = "DA6D0F01-0D18-442C-BABE-F85B5BAA6F11"
+    // Bass, mid, treble; one byte each, level + 10 (flat = 10)
+    let EQ_UUIDS = [
+        "DA6D0F02-0D18-442C-BABE-F85B5BAA6F11",
+        "DA6D0F03-0D18-442C-BABE-F85B5BAA6F11",
+        "DA6D0F04-0D18-442C-BABE-F85B5BAA6F11",
+    ]
     let MAX_VOLUME: UInt8 = 36
     
     @Published var bluetoothReady = false
     @Published var deviceReady = false
     @Published var volume: UInt8 = 1
     @Published var activeInput: Input?
+    @Published var eqLevels: [String: Int] = [:]
     @Published var statusText = "Disconnected"
     
     var UUIDS: [String] = []
@@ -72,7 +106,7 @@ class Speaker: NSObject, CBCentralManagerDelegate, CBPeripheralDelegate, Observa
     
     override init() {
         super.init()
-        UUIDS = [VOLUME_UUID, INPUT_UUID]
+        UUIDS = [VOLUME_UUID, INPUT_UUID] + EQ_UUIDS
         centralManager = CBCentralManager(delegate: self, queue: DispatchQueue.main, options: [CBCentralManagerOptionRestoreIdentifierKey: DEVICE_NAME])
     }
     
@@ -88,7 +122,7 @@ class Speaker: NSObject, CBCentralManagerDelegate, CBPeripheralDelegate, Observa
             connectedPeripheral?.delegate = self
             deviceReady = false
             characteristics.removeAll()
-            peripheral.discoverServices([CBUUID(string: SERVICE_UUID), CBUUID(string: INPUT_SERVICE_UUID)])
+            peripheral.discoverServices([SERVICE_UUID, INPUT_SERVICE_UUID, EQ_SERVICE_UUID].map { CBUUID(string: $0) })
             self.statusText = "Connecting to speaker"
             return
         }
@@ -162,7 +196,7 @@ class Speaker: NSObject, CBCentralManagerDelegate, CBPeripheralDelegate, Observa
         deviceReady = false
         characteristics.removeAll()
         logger.info("Reset BLE state after connect; discovering services")
-        peripheral.discoverServices([CBUUID(string: SERVICE_UUID), CBUUID(string: INPUT_SERVICE_UUID)])
+        peripheral.discoverServices([SERVICE_UUID, INPUT_SERVICE_UUID, EQ_SERVICE_UUID].map { CBUUID(string: $0) })
         self.statusText = "Connecting to speaker"
     }
     
@@ -236,6 +270,10 @@ class Speaker: NSObject, CBCentralManagerDelegate, CBPeripheralDelegate, Observa
             // nil for OFF or an unknown byte, so no tile is highlighted
             activeInput = characteristic.value?.first.flatMap(Input.init(rawValue:))
         }
+
+        if EQ_UUIDS.contains(characteristic.uuid.uuidString), let byte = characteristic.value?.first {
+            eqLevels[characteristic.uuid.uuidString] = Int(byte) - 10
+        }
     }
     
     func centralManager(_ central: CBCentralManager, didFailToConnect peripheral: CBPeripheral, error: Error?) {
@@ -274,6 +312,23 @@ class Speaker: NSObject, CBCentralManagerDelegate, CBPeripheralDelegate, Observa
         self.connectedPeripheral?.writeValue(Data([input.rawValue]), for: characteristic, type: .withResponse)
     }
     
+    // nil when the bands don't match any preset (set from another app)
+    var activePreset: EQPreset? {
+        EQPreset.allCases.first { preset in
+            zip(EQ_UUIDS, preset.levels).allSatisfy { eqLevels[$0] == $1 }
+        }
+    }
+
+    func applyPreset(_ preset: EQPreset) {
+        guard deviceReady else { return }
+        for (uuid, level) in zip(EQ_UUIDS, preset.levels) {
+            guard let characteristic = characteristics[uuid] else { continue }
+            connectedPeripheral?.writeValue(Data([UInt8(level + 10)]), for: characteristic, type: .withResponse)
+            // The speaker may not notify EQ changes, so show the preset right away
+            eqLevels[uuid] = level
+        }
+    }
+
     func volumeUp() {
         guard volume < MAX_VOLUME else { return }
         setVolume(volume + 1)

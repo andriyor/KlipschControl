@@ -88,7 +88,22 @@ struct ContentView: View {
         .onChange(of: speaker.volume, initial: true) {
             sliderValue = Double(speaker.volume)
         }
-        
+
+        VStack {
+            Text("EQ (\(speaker.activePreset?.label ?? "Custom"))").font(.title3).bold()
+
+            Picker("EQ", selection: Binding(
+                get: { speaker.activePreset },
+                set: { if let preset = $0 { speaker.applyPreset(preset) } }
+            )) {
+                ForEach(EQPreset.allCases, id: \.self) { preset in
+                    Text(preset.label).tag(Optional(preset))
+                }
+            }
+            .pickerStyle(.segmented)
+        }.padding()
+        .disabled(!speaker.deviceReady)
+
         Spacer()
         
     }
