@@ -65,4 +65,4 @@ In short: use the official app for firmware updates and first setup, KlipschRemo
 - [x] EQ presets
 - [x] EQ sliders for bass, mid and treble
 - [x] Dynamic Bass, Night Mode
-- [ ] fix the background disconnect timer running off the main thread
+- [x] fix the background disconnect timer running off the main thread
