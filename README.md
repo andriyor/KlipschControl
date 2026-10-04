@@ -15,12 +15,13 @@ It is a fork of [wleese/KlipschControl](https://github.com/wleese/KlipschControl
 
 ## Features
 
-* Fast and reliable connection, ~4 seconds versus ~15 for the official app, with no device chooser: reuses the link iOS already has to the speaker (`retrieveConnectedPeripherals`) instead of scanning, and only scans by name as a fallback
+* Fast and reliable connection, ~4 seconds versus ~15 for the official app, with no device chooser: reuses the link iOS already has to the speaker (`retrieveConnectedPeripherals`) instead of scanning, and only scans as a fallback, matching any Klipsch speaker by name or by its Klipsch service IDs (so a renamed speaker is still found)
 * Restores the connection when iOS relaunches the app, and reconnects on its own after an unexpected disconnect
 * Volume: slider plus −/+ buttons, shown as a percentage; follows the speaker's knob and remote live
 * Input: TV, Bluetooth, Optical, USB, Analog and Phono; the active input is highlighted and follows the speaker's remote
 * EQ presets: Flat, Vocal, Bass, Rock and Boom (shows Custom when the EQ was set to something else)
 * Dynamic Bass and Night Mode switches
+* Shows the speaker model (The Fives, Sevens, Nines or a McLaren edition) in the header, read from the speaker's Device Information service
 * Controls stay disabled until the speaker is ready
 
 ## How did we get here?
