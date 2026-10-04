@@ -11,6 +11,8 @@ The ones that bothered me most were:
 
 This is an iOS app that serves as a simple, fast remote control for the **Klipsch The Fives**, and should also work with The Sevens and The Nines (including McLaren editions), which share the same protocol.
 
+<img src="https://github.com/user-attachments/assets/e63eb3f3-245a-4315-a473-230ddb0292eb" width="300" alt="KlipschControl screenshot">
+
 ## Features
 
 * Fast and reliable connection, ~4 seconds versus ~15 for the official app, with no device chooser: reuses the link iOS already has to the speaker (`retrieveConnectedPeripherals`) instead of scanning, and only scans as a fallback, matching any Klipsch speaker by name or by its Klipsch service IDs (so a renamed speaker is still found)
