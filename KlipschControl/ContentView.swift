@@ -102,13 +102,31 @@ struct ContentView: View {
             }
             .pickerStyle(.segmented)
 
-            Toggle("Dynamic Bass", isOn: Binding(get: { speaker.dynamicBass }, set: { speaker.setDynamicBass($0) }))
-            Toggle("Night Mode", isOn: Binding(get: { speaker.nightMode }, set: { speaker.setNightMode($0) }))
+            // Labels and descriptions from KlipschRemote's Audio Adjustments panel
+            Text("Audio Adjustments").font(.title3).bold().padding(.top)
+
+            Toggle(isOn: Binding(get: { speaker.dynamicBass }, set: { speaker.setDynamicBass($0) })) {
+                adjustmentLabel("Dynamic Bass", "Boosts bass at lower volume levels for a fuller sound.", icon: "waveform")
+            }
+            Toggle(isOn: Binding(get: { speaker.nightMode }, set: { speaker.setNightMode($0) })) {
+                adjustmentLabel("Night Mode", "Compresses the dynamic range so loud sounds are softer and quiet sounds are cleaner at low volume.", icon: "moon.fill")
+            }
         }.padding()
         .disabled(!speaker.deviceReady)
 
         Spacer()
         
+    }
+}
+
+private func adjustmentLabel(_ title: String, _ description: String, icon: String) -> some View {
+    Label {
+        VStack(alignment: .leading, spacing: 2) {
+            Text(title)
+            Text(description).font(.caption).foregroundStyle(.secondary)
+        }
+    } icon: {
+        Image(systemName: icon)
     }
 }
 
