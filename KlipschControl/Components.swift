@@ -10,11 +10,33 @@ import SwiftUI
 struct Card<Content: View>: View {
     let title: String
     let icon: String
+    // Shown in a popover from an info button next to the title
+    var info: String? = nil
     @ViewBuilder let content: Content
+    @State private var showInfo = false
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
-            Label(title, systemImage: icon).font(.headline)
+            HStack {
+                Label(title, systemImage: icon).font(.headline)
+                if let info {
+                    Button(action: { showInfo = true }) {
+                        Image(systemName: "info.circle").frame(width: 44, height: 44)
+                    }
+                    .accessibilityLabel("About \(title)")
+                    // Without the adaptation, iPhone shows the popover as a full sheet
+                    .popover(isPresented: $showInfo) {
+                        Text(info)
+                            .font(.footnote)
+                            .padding()
+                            .frame(width: 280)
+                            .fixedSize(horizontal: false, vertical: true)
+                            .presentationCompactAdaptation(.popover)
+                    }
+                    // Keeps the 44 pt tap area from making the header taller
+                    .padding(.vertical, -12)
+                }
+            }
             content
         }
         .padding()
@@ -30,21 +52,26 @@ struct InputTile: View {
 
     var body: some View {
         Button(action: action) {
-            VStack(spacing: 6) {
+            // Compact: two rows of three in the bottom bar
+            VStack(spacing: 4) {
                 if input == .bluetooth {
                     BluetoothRune()
-                        .stroke(style: StrokeStyle(lineWidth: 2.2, lineCap: .round, lineJoin: .round))
-                        .frame(width: 26, height: 26)
+                        .stroke(style: StrokeStyle(lineWidth: 2, lineCap: .round, lineJoin: .round))
+                        .frame(width: 20, height: 20)
                 } else {
-                    Image(systemName: input.icon).font(.title2).frame(height: 26)
+                    Image(systemName: input.icon).font(.title3).frame(height: 20)
                 }
-                Text(input.label).font(.caption).fontWeight(selected ? .bold : .regular)
+                Text(input.label)
+                    .font(.caption2)
+                    .fontWeight(selected ? .bold : .regular)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.8)
             }
             .frame(maxWidth: .infinity)
-            .padding(.vertical, 12)
+            .padding(.vertical, 8)
             .background(selected ? Color.blue : Color.blue.opacity(0.15))
             .foregroundColor(selected ? .white : .blue)
-            .cornerRadius(14)
+            .cornerRadius(10)
         }
         .animation(.easeInOut(duration: 0.15), value: selected)
     }

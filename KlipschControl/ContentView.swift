@@ -38,16 +38,6 @@ struct ContentView: View {
                 .padding(.top)
 
                 VStack(spacing: 16) {
-                    Card(title: "Input", icon: "rectangle.on.rectangle") {
-                        LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 3), spacing: 8) {
-                            ForEach(Input.allCases, id: \.self) { input in
-                                InputTile(input: input, selected: speaker.activeInput == input) {
-                                    if speaker.activeInput != input { speaker.switchInput(input) }
-                                }
-                            }
-                        }
-                    }
-
                     Card(title: "EQ (\(speaker.activePreset?.label ?? "Custom"))", icon: "slider.vertical.3") {
                         Picker("EQ", selection: Binding(
                             get: { speaker.activePreset },
@@ -65,19 +55,14 @@ struct ContentView: View {
                     }
 
                     // Labels and descriptions from KlipschRemote's Audio Adjustments panel
-                    Card(title: "Audio Adjustments", icon: "tuningfork") {
+                    Card(title: "Audio Adjustments", icon: "tuningfork",
+                         info: "Only one mode can be on at a time. Turning Night Mode off restores Dynamic Bass to how it was before.") {
                         Toggle(isOn: Binding(get: { speaker.dynamicBass }, set: { speaker.setDynamicBass($0) })) {
                             adjustmentLabel("Dynamic Bass", "Boosts bass at lower volume levels for a fuller sound.", icon: "waveform")
                         }
                         Toggle(isOn: Binding(get: { speaker.nightMode }, set: { speaker.setNightMode($0) })) {
                             adjustmentLabel("Night Mode", "Compresses the dynamic range so loud sounds are softer and quiet sounds are cleaner at low volume.", icon: "moon.fill")
                         }
-
-                        Divider().padding(.top, 4)
-
-                        Label("Only one mode can be on at a time. Turning Night Mode off restores Dynamic Bass to how it was before.", systemImage: "info.circle")
-                            .font(.footnote)
-                            .foregroundStyle(.secondary)
                     }
                 }
                 // Not on the header: tapping the status text to rescan must work while not ready
@@ -85,34 +70,46 @@ struct ContentView: View {
             }
             .padding()
         }
-        // Pinned under the thumb and visible however far the cards scroll
+        // The most-used controls, pinned under the thumb and visible however far the cards scroll
         .safeAreaInset(edge: .bottom) {
-            // Like Apple Music, but the speaker icons step the volume by one for fine control
-            HStack(spacing: 4) {
-                Button(action: { speaker.volumeDown() }) {
-                    Image(systemName: "speaker.fill").frame(width: 44, height: 44)
-                }
-                .accessibilityLabel("Volume down")
-
-                // Write only on release; per-step writes would queue up over BLE.
-                // Don't track drag state from onEditingChanged: on iOS 26 it fires an extra
-                // `true` after release, which would leave it stuck. No `step:`, so round here.
-                Slider(value: $sliderValue, in: 0...Double(speaker.MAX_VOLUME)) { editing in
-                    if !editing {
-                        sliderValue = sliderValue.rounded()
-                        speaker.setVolume(UInt8(sliderValue))
+            // Gap between inputs and volume so a thumb on the slider doesn't switch input by accident
+            VStack(spacing: 24) {
+                LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 6), count: 3), spacing: 6) {
+                    ForEach(Input.allCases, id: \.self) { input in
+                        InputTile(input: input, selected: speaker.activeInput == input) {
+                            if speaker.activeInput != input { speaker.switchInput(input) }
+                        }
                     }
                 }
-                .accessibilityLabel("Volume")
+                .padding(.horizontal, 8)
 
-                Button(action: { speaker.volumeUp() }) {
-                    Image(systemName: "speaker.wave.3.fill").frame(width: 44, height: 44)
+                // Like Apple Music, but the speaker icons step the volume by one for fine control
+                HStack(spacing: 4) {
+                    Button(action: { speaker.volumeDown() }) {
+                        Image(systemName: "speaker.fill").frame(width: 44, height: 44)
+                    }
+                    .accessibilityLabel("Volume down")
+
+                    // Write only on release; per-step writes would queue up over BLE.
+                    // Don't track drag state from onEditingChanged: on iOS 26 it fires an extra
+                    // `true` after release, which would leave it stuck. No `step:`, so round here.
+                    Slider(value: $sliderValue, in: 0...Double(speaker.MAX_VOLUME)) { editing in
+                        if !editing {
+                            sliderValue = sliderValue.rounded()
+                            speaker.setVolume(UInt8(sliderValue))
+                        }
+                    }
+                    .accessibilityLabel("Volume")
+
+                    Button(action: { speaker.volumeUp() }) {
+                        Image(systemName: "speaker.wave.3.fill").frame(width: 44, height: 44)
+                    }
+                    .accessibilityLabel("Volume up")
                 }
-                .accessibilityLabel("Volume up")
+                .foregroundStyle(.secondary)
             }
-            .foregroundStyle(.secondary)
             .padding(.horizontal, 8)
-            .padding(.vertical, 4)
+            .padding(.top, 8)
             .background(.bar)
             .disabled(!speaker.deviceReady)
             .onChange(of: speaker.volume, initial: true) {
