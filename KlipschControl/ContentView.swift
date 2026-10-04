@@ -38,16 +38,6 @@ struct ContentView: View {
                 .padding(.top)
 
                 VStack(spacing: 16) {
-                    Card(title: "Input", icon: "rectangle.on.rectangle") {
-                        LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 3), spacing: 8) {
-                            ForEach(Input.allCases, id: \.self) { input in
-                                InputTile(input: input, selected: speaker.activeInput == input) {
-                                    if speaker.activeInput != input { speaker.switchInput(input) }
-                                }
-                            }
-                        }
-                    }
-
                     Card(title: "Volume (\(Int(sliderValue.rounded()) * 100 / Int(speaker.MAX_VOLUME))%)", icon: "speaker.wave.2.fill") {
                         HStack {
                             Button(action: {
@@ -75,6 +65,16 @@ struct ContentView: View {
                     }
                     .onChange(of: speaker.volume, initial: true) {
                         sliderValue = Double(speaker.volume)
+                    }
+
+                    Card(title: "Input", icon: "rectangle.on.rectangle") {
+                        LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 3), spacing: 8) {
+                            ForEach(Input.allCases, id: \.self) { input in
+                                InputTile(input: input, selected: speaker.activeInput == input) {
+                                    if speaker.activeInput != input { speaker.switchInput(input) }
+                                }
+                            }
+                        }
                     }
 
                     Card(title: "EQ (\(speaker.activePreset?.label ?? "Custom"))", icon: "slider.vertical.3") {
