@@ -304,7 +304,6 @@ class Speaker: NSObject, CBCentralManagerDelegate, CBPeripheralDelegate, Observa
     }
     
     func volume(data: Data) {
-        print("Characteristics: \(self.characteristics)")
         guard deviceReady, let characteristic = characteristics[VOLUME_UUID] else { return }
         self.connectedPeripheral?.writeValue(data, for: characteristic, type: .withResponse)
     }
