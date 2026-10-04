@@ -74,8 +74,13 @@ class Speaker: NSObject, CBCentralManagerDelegate, CBPeripheralDelegate, Observa
         case .poweredOn:
             bluetoothReady = true
             self.statusText = "Bluetooth is ready"
-            logger.info("Bluetooth powered on; starting scan")
-            triggerScan()
+            if let peripheral = connectedPeripheral, peripheral.state == .disconnected {
+                logger.info("Bluetooth powered on; reconnecting restored peripheral")
+                central.connect(peripheral, options: nil)
+            } else {
+                logger.info("Bluetooth powered on; starting scan")
+                triggerScan()
+            }
         default:
             deviceReady = false
             bluetoothReady = false
@@ -87,22 +92,15 @@ class Speaker: NSObject, CBCentralManagerDelegate, CBPeripheralDelegate, Observa
     
     // Restore the connection to the peripherals
     func centralManager(_ central: CBCentralManager, willRestoreState dict: [String: Any]) {
+        // Called before centralManagerDidUpdateState, so only remember the peripheral here;
+        // the connect happens once Bluetooth is powered on.
         self.statusText = "Restoring state"
-        if bluetoothReady {
-            if let peripherals = dict[CBCentralManagerRestoredStatePeripheralsKey] as? [CBPeripheral] {
-                logger.info("willRestoreState received \(peripherals.count) peripheral(s)")
-                for peripheral in peripherals {
-                    logger.info("Restoring peripheral: \(peripheral.name ?? "unknown") [\(peripheral.identifier.uuidString)]")
-                    connectedPeripheral = peripheral
-                    connectedPeripheral?.delegate = self
-                    centralManager.connect(peripheral, options: nil)
-                }
-            } else {
-                logger.info("willRestoreState received no peripherals to restore")
-            }
+        if let peripherals = dict[CBCentralManagerRestoredStatePeripheralsKey] as? [CBPeripheral], let peripheral = peripherals.first {
+            logger.info("Restoring peripheral: \(peripheral.name ?? "unknown") [\(peripheral.identifier.uuidString)]")
+            connectedPeripheral = peripheral
+            connectedPeripheral?.delegate = self
         } else {
-            self.statusText = "Bluetooth not ready for restore"
-            logger.warning("willRestoreState called while bluetoothReady is false")
+            logger.info("willRestoreState received no peripherals to restore")
         }
     }
     
@@ -249,17 +247,21 @@ class Speaker: NSObject, CBCentralManagerDelegate, CBPeripheralDelegate, Observa
     func centralManager(_ central: CBCentralManager, didDisconnectPeripheral peripheral: CBPeripheral, error: Error?) {
         logger.info("didDisconnectPeripheral for peripheral: \(peripheral.name ?? "unknown") [\(peripheral.identifier.uuidString)] error: \(error?.localizedDescription ?? "none")")
         deviceReady = false
-        connectedPeripheral = nil
         // Clear characteristics and descriptors on disconnect
         characteristics.removeAll()
         descriptors.removeAll()
-        self.statusText = "Disconnected, reconnecting..."
 
-        // Attempt to reconnect
-        if bluetoothReady {
-            logger.info("Bluetooth still ready after disconnect; restarting scan")
-            centralManager.scanForPeripherals(withServices: nil, options: nil)
+        // A nil error means we called cancelPeripheralConnection ourselves; don't undo that
+        guard error != nil, bluetoothReady else {
+            connectedPeripheral = nil
+            self.statusText = "Disconnected"
+            return
         }
+
+        // A pending connect never times out and works in the background, unlike a nameless scan
+        self.statusText = "Disconnected, reconnecting..."
+        logger.info("Unexpected disconnect; requesting reconnect")
+        central.connect(peripheral, options: nil)
     }
     
     func disconnect() {
