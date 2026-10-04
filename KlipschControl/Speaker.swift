@@ -70,7 +70,6 @@ class Speaker: NSObject, CBCentralManagerDelegate, CBPeripheralDelegate, Observa
     var connectedPeripheral: CBPeripheral?
     
     var characteristics: [String: CBCharacteristic] = [:]
-    var descriptors: [String: [CBDescriptor]] = [:]
     
     override init() {
         super.init()
@@ -90,7 +89,6 @@ class Speaker: NSObject, CBCentralManagerDelegate, CBPeripheralDelegate, Observa
             connectedPeripheral?.delegate = self
             deviceReady = false
             characteristics.removeAll()
-            descriptors.removeAll()
             peripheral.discoverServices(nil)
             self.statusText = "Connected to speaker"
             return
@@ -169,7 +167,6 @@ class Speaker: NSObject, CBCentralManagerDelegate, CBPeripheralDelegate, Observa
         connectedPeripheral?.delegate = self
         deviceReady = false
         characteristics.removeAll()
-        descriptors.removeAll()
         logger.info("Reset BLE state after connect; discovering services")
         peripheral.discoverServices(nil)
         self.statusText = "Connected to speaker"
@@ -208,7 +205,6 @@ class Speaker: NSObject, CBCentralManagerDelegate, CBPeripheralDelegate, Observa
             if UUIDS.contains(characteristic.uuid.uuidString) {
                 logger.info("Found tracked characteristic \(characteristic.uuid.uuidString)")
                 characteristics[characteristic.uuid.uuidString] = characteristic
-                peripheral.discoverDescriptors(for: characteristic)
 
                 // Subscribe right away so changes made on the speaker (remote, knob) reach the app
                 if characteristic.properties.contains(.notify) || characteristic.properties.contains(.indicate) {
@@ -222,7 +218,6 @@ class Speaker: NSObject, CBCentralManagerDelegate, CBPeripheralDelegate, Observa
             }
         })
 
-        // Some devices do not expose descriptors for every characteristic.
         // Mark the device as ready once all required characteristics are present.
         if characteristics.count == UUIDS.count {
             self.statusText = "" // We're good, no need for status text
@@ -230,13 +225,6 @@ class Speaker: NSObject, CBCentralManagerDelegate, CBPeripheralDelegate, Observa
             logger.info("deviceReady set to true; discovered required characteristics: \(Array(self.characteristics.keys).sorted().joined(separator: ", "))")
         } else {
             logger.info("deviceReady still false; have \(self.characteristics.count)/\(self.UUIDS.count) required characteristics: \(Array(self.characteristics.keys).sorted().joined(separator: ", "))")
-        }
-    }
-    
-    // callback discovery of characteristic descriptors
-    func peripheral(_ peripheral: CBPeripheral, didDiscoverDescriptorsFor characteristic: CBCharacteristic, error: Error?) {
-        if UUIDS.contains(characteristic.uuid.uuidString) {
-            descriptors[characteristic.uuid.uuidString] = characteristic.descriptors
         }
     }
     
@@ -279,9 +267,7 @@ class Speaker: NSObject, CBCentralManagerDelegate, CBPeripheralDelegate, Observa
     func centralManager(_ central: CBCentralManager, didDisconnectPeripheral peripheral: CBPeripheral, error: Error?) {
         logger.info("didDisconnectPeripheral for peripheral: \(peripheral.name ?? "unknown") [\(peripheral.identifier.uuidString)] error: \(error?.localizedDescription ?? "none")")
         deviceReady = false
-        // Clear characteristics and descriptors on disconnect
         characteristics.removeAll()
-        descriptors.removeAll()
 
         // A nil error means we called cancelPeripheralConnection ourselves; don't undo that
         guard error != nil, bluetoothReady else {
