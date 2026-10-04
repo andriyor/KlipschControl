@@ -297,13 +297,17 @@ class Speaker: NSObject, CBCentralManagerDelegate, CBPeripheralDelegate, Observa
     }
 
     func applyPreset(_ preset: EQPreset) {
-        guard deviceReady else { return }
         for (uuid, level) in zip(EQ_UUIDS, preset.levels) {
-            guard let characteristic = characteristics[uuid] else { continue }
-            connectedPeripheral?.writeValue(Data([UInt8(level + 10)]), for: characteristic, type: .withResponse)
-            // The speaker may not notify EQ changes, so show the preset right away
-            eqLevels[uuid] = level
+            setEQLevel(uuid, level)
         }
+    }
+
+    // level in -10...+6
+    func setEQLevel(_ uuid: String, _ level: Int) {
+        guard deviceReady, let characteristic = characteristics[uuid] else { return }
+        connectedPeripheral?.writeValue(Data([UInt8(level + 10)]), for: characteristic, type: .withResponse)
+        // The speaker may not notify EQ changes, so show the level right away
+        eqLevels[uuid] = level
     }
 
     func setNightMode(_ on: Bool) {

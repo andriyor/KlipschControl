@@ -50,6 +50,32 @@ struct InputTile: View {
     }
 }
 
+// One EQ band in -10...+6. Like the volume slider, it follows the speaker and writes only on release.
+struct EQSlider: View {
+    let label: String
+    let level: Int?
+    let onRelease: (Int) -> Void
+    @State private var value = 0.0
+
+    var body: some View {
+        HStack {
+            Text(label).frame(width: 56, alignment: .leading)
+            Slider(value: $value, in: -10...6) { editing in
+                if !editing {
+                    value = value.rounded()
+                    onRelease(Int(value))
+                }
+            }
+            Text(Int(value.rounded()).formatted(.number.sign(strategy: .always(includingZero: false))))
+                .monospacedDigit()
+                .frame(width: 32, alignment: .trailing)
+        }
+        .onChange(of: level, initial: true) {
+            if let level { value = Double(level) }
+        }
+    }
+}
+
 // SF Symbols has no Bluetooth logo, so draw the rune. Path is the Feather "bluetooth" icon
 // (MIT) on a 24x24 grid, scaled to fit.
 struct BluetoothRune: Shape {

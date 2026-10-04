@@ -87,6 +87,10 @@ struct ContentView: View {
                             }
                         }
                         .pickerStyle(.segmented)
+
+                        ForEach(Array(zip(["Bass", "Mid", "Treble"], speaker.EQ_UUIDS)), id: \.1) { label, uuid in
+                            EQSlider(label: label, level: speaker.eqLevels[uuid]) { speaker.setEQLevel(uuid, $0) }
+                        }
                     }
 
                     // Labels and descriptions from KlipschRemote's Audio Adjustments panel
