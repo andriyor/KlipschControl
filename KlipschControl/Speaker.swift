@@ -89,7 +89,7 @@ class Speaker: NSObject, CBCentralManagerDelegate, CBPeripheralDelegate, Observa
             deviceReady = false
             characteristics.removeAll()
             peripheral.discoverServices([CBUUID(string: SERVICE_UUID), CBUUID(string: INPUT_SERVICE_UUID)])
-            self.statusText = "Connected to speaker"
+            self.statusText = "Connecting to speaker"
             return
         }
         
@@ -102,9 +102,9 @@ class Speaker: NSObject, CBCentralManagerDelegate, CBPeripheralDelegate, Observa
         switch central.state {
         case .poweredOn:
             bluetoothReady = true
-            self.statusText = "Bluetooth is ready"
             if let peripheral = connectedPeripheral, peripheral.state == .disconnected {
                 logger.info("Bluetooth powered on; reconnecting restored peripheral")
+                self.statusText = "Connecting to speaker"
                 central.connect(peripheral, options: nil)
             } else {
                 logger.info("Bluetooth powered on; starting scan")
@@ -122,7 +122,6 @@ class Speaker: NSObject, CBCentralManagerDelegate, CBPeripheralDelegate, Observa
     func centralManager(_ central: CBCentralManager, willRestoreState dict: [String: Any]) {
         // Called before centralManagerDidUpdateState, so only remember the peripheral here;
         // the connect happens once Bluetooth is powered on.
-        self.statusText = "Restoring state"
         if let peripherals = dict[CBCentralManagerRestoredStatePeripheralsKey] as? [CBPeripheral], let peripheral = peripherals.first {
             logger.info("Restoring peripheral: \(peripheral.name ?? "unknown") [\(peripheral.identifier.uuidString)]")
             connectedPeripheral = peripheral
@@ -142,7 +141,7 @@ class Speaker: NSObject, CBCentralManagerDelegate, CBPeripheralDelegate, Observa
         }
         
         if discoveredName == DEVICE_NAME {
-            self.statusText = "Found our speaker"
+            self.statusText = "Connecting to speaker"
             logger.info("Matched target device name: \(DEVICE_NAME)")
             
             connectedPeripheral = peripheral
@@ -164,11 +163,10 @@ class Speaker: NSObject, CBCentralManagerDelegate, CBPeripheralDelegate, Observa
         characteristics.removeAll()
         logger.info("Reset BLE state after connect; discovering services")
         peripheral.discoverServices([CBUUID(string: SERVICE_UUID), CBUUID(string: INPUT_SERVICE_UUID)])
-        self.statusText = "Connected to speaker"
+        self.statusText = "Connecting to speaker"
     }
     
     func peripheral( _ peripheral: CBPeripheral, didDiscoverServices error: Error?) {
-        self.statusText = "Discovering services"
         if let error = error {
             logger.error("didDiscoverServices failed: \(error.localizedDescription)")
         }
@@ -178,14 +176,12 @@ class Speaker: NSObject, CBCentralManagerDelegate, CBPeripheralDelegate, Observa
         }
         logger.info("didDiscoverServices found \(services.count) service(s): \(services.map { $0.uuid.uuidString }.joined(separator: ", "))")
         for service in services {
-            self.statusText = "Found service on \(peripheral.name ?? "speaker")"
             logger.info("Discovering characteristics for service \(service.uuid.uuidString)")
             peripheral.discoverCharacteristics(UUIDS.map { CBUUID(string: $0) }, for: service)
         }
     }
     
     func peripheral(_ peripheral: CBPeripheral, didDiscoverCharacteristicsFor service: CBService, error: Error?) {
-        self.statusText = "Discovered characteristic"
         if let error = error {
             self.statusText = "An error occurred discovering characteristics: " + error.localizedDescription
             logger.error("didDiscoverCharacteristicsFor service \(service.uuid.uuidString) failed: \(error.localizedDescription)")
@@ -213,7 +209,7 @@ class Speaker: NSObject, CBCentralManagerDelegate, CBPeripheralDelegate, Observa
 
         // Mark the device as ready once all required characteristics are present.
         if characteristics.count == UUIDS.count {
-            self.statusText = ""
+            self.statusText = "Connected"
             deviceReady = true
             logger.info("deviceReady set to true; discovered required characteristics: \(Array(self.characteristics.keys).sorted().joined(separator: ", "))")
         } else {
