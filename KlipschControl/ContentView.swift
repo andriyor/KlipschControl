@@ -7,12 +7,6 @@
 
 import SwiftUI
 
-let bluetooth = Data([0x00])
-let digital = Data([0x01])
-let usbComputer = Data([0x02])
-let usbStorage = Data([0x03])
-let analog = Data([0x04])
-
 struct ContentView: View {
     @StateObject var speaker: Speaker
     // Local slider position, so speaker notifications don't move it while dragging
