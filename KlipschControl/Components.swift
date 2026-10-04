@@ -69,8 +69,8 @@ struct InputTile: View {
       }
       .frame(maxWidth: .infinity)
       .padding(.vertical, 8)
-      .background(selected ? Color.blue : Color.blue.opacity(0.15))
-      .foregroundColor(selected ? .white : .blue)
+      .background(selected ? Color.accentColor : Color.accentColor.opacity(0.15))
+      .foregroundStyle(selected ? Color.white : Color.accentColor)
       .cornerRadius(10)
     }
     .animation(.easeInOut(duration: 0.15), value: selected)
