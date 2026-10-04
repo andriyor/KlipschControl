@@ -70,6 +70,20 @@ enum EQPreset: CaseIterable {
     }
 }
 
+// Dynamic Bass and Night Mode can't both be on. Turning Night Mode off makes the speaker switch
+// Dynamic Bass back on by itself, so "Off" from Night Mode needs a second write afterwards.
+enum SoundMode: CaseIterable {
+    case off, dynamicBass, night
+
+    var label: String {
+        switch self {
+        case .off: "Off"
+        case .dynamicBass: "Dynamic Bass"
+        case .night: "Night Mode"
+        }
+    }
+}
+
 let logger = Logger(subsystem: "KlipschControl", category: "Speaker")
 
 let DEVICE_NAME = "Klipsch The Fives"
@@ -99,6 +113,8 @@ class Speaker: NSObject, CBCentralManagerDelegate, CBPeripheralDelegate, Observa
     @Published var eqLevels: [String: Int] = [:]
     @Published var nightMode = false
     @Published var dynamicBass = false
+    // Set while switching Night Mode -> Off: turn Dynamic Bass off once the speaker re-enables it
+    private var bassOffAfterNight = false
     @Published var statusText = "Disconnected"
     
     var UUIDS: [String] = []
@@ -281,8 +297,16 @@ class Speaker: NSObject, CBCentralManagerDelegate, CBPeripheralDelegate, Observa
         }
 
         if let byte = characteristic.value?.first {
-            if characteristic.uuid.uuidString == NIGHT_MODE_UUID { nightMode = byte != 0 }
-            if characteristic.uuid.uuidString == DYNAMIC_BASS_UUID { dynamicBass = byte != 0 }
+            if characteristic.uuid.uuidString == NIGHT_MODE_UUID {
+                nightMode = byte != 0
+            }
+            if characteristic.uuid.uuidString == DYNAMIC_BASS_UUID {
+                dynamicBass = byte != 0
+                if dynamicBass, bassOffAfterNight {
+                    bassOffAfterNight = false
+                    writeMode(DYNAMIC_BASS_UUID, false)
+                }
+            }
         }
     }
     
@@ -339,21 +363,35 @@ class Speaker: NSObject, CBCentralManagerDelegate, CBPeripheralDelegate, Observa
         }
     }
 
-    func setNightMode(_ on: Bool) {
-        guard writeToggle(NIGHT_MODE_UUID, on) else { return }
-        nightMode = on
+    var soundMode: SoundMode {
+        nightMode ? .night : dynamicBass ? .dynamicBass : .off
     }
 
-    func setDynamicBass(_ on: Bool) {
-        guard writeToggle(DYNAMIC_BASS_UUID, on) else { return }
-        dynamicBass = on
+    // Only write Night Mode when it actually changes: writing it off re-enables Dynamic Bass
+    func setSoundMode(_ mode: SoundMode) {
+        guard deviceReady else { return }
+        bassOffAfterNight = false
+        switch mode {
+        case .night:
+            writeMode(NIGHT_MODE_UUID, true)
+        case .dynamicBass:
+            if nightMode { writeMode(NIGHT_MODE_UUID, false) } else { writeMode(DYNAMIC_BASS_UUID, true) }
+        case .off:
+            if nightMode {
+                bassOffAfterNight = true
+                writeMode(NIGHT_MODE_UUID, false)
+            } else {
+                writeMode(DYNAMIC_BASS_UUID, false)
+            }
+        }
+        // Shown right away; the speaker's notifications correct it if needed
+        nightMode = mode == .night
+        dynamicBass = mode == .dynamicBass
     }
 
-    // Like EQ, shown right away since the speaker may not notify these changes
-    private func writeToggle(_ uuid: String, _ on: Bool) -> Bool {
-        guard deviceReady, let characteristic = characteristics[uuid] else { return false }
+    private func writeMode(_ uuid: String, _ on: Bool) {
+        guard let characteristic = characteristics[uuid] else { return }
         connectedPeripheral?.writeValue(Data([on ? 1 : 0]), for: characteristic, type: .withResponse)
-        return true
     }
 
     func volumeUp() {

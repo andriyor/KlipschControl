@@ -102,8 +102,14 @@ struct ContentView: View {
             }
             .pickerStyle(.segmented)
 
-            Toggle("Dynamic Bass", isOn: Binding(get: { speaker.dynamicBass }, set: { speaker.setDynamicBass($0) }))
-            Toggle("Night Mode", isOn: Binding(get: { speaker.nightMode }, set: { speaker.setNightMode($0) }))
+            Text("Mode").font(.title3).bold().padding(.top)
+
+            Picker("Mode", selection: Binding(get: { speaker.soundMode }, set: { speaker.setSoundMode($0) })) {
+                ForEach(SoundMode.allCases, id: \.self) { mode in
+                    Text(mode.label).tag(mode)
+                }
+            }
+            .pickerStyle(.segmented)
         }.padding()
         .disabled(!speaker.deviceReady)
 
