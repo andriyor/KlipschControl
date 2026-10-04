@@ -55,13 +55,14 @@ In short: use the official app for firmware updates and first setup, KlipschRemo
 
 * Only tested on The Fives. The Sevens and The Nines use the same protocol according to KlipschRemote, but haven't been tried.
 * The app connects to the first Klipsch speaker it finds (by name, or by Klipsch's service IDs if it was renamed); there's no picker for choosing between several speakers.
-* Only volume, input, EQ, Dynamic Bass and Night Mode are implemented; no speaker placement, subwoofer or device settings.
+* Only volume, input, EQ, Dynamic Bass and Night Mode are implemented; no speaker placement, subwoofer, playback controls or device settings.
 * Switching from Bluetooth to another input and back drops the phone's audio connection: the speaker's Bluetooth light blinks and you have to reconnect it in iOS Settings → Bluetooth. This is the speaker's firmware: it happens with the official app and KlipschRemote too, while switching with the speaker's own knob reconnects audio by itself. iOS apps can't start an audio connection, so the app can't fix it. The app's own control connection is not affected.
 * Dynamic Bass and Night Mode are linked on the speaker: turning Night Mode on turns Dynamic Bass off, and turning Night Mode off (or Dynamic Bass on) restores Dynamic Bass to what it was before Night Mode. The two switches show what the speaker does, so turning Dynamic Bass on from Night Mode may need a second tap.
-* Changing the input with the speaker's knob doesn't notify the app, so the highlighted input only updates on the next connect (changes from the IR remote do show up).
+* Changing the input with the speaker's knob doesn't notify the app (no Bluetooth characteristic reports it), so the highlighted input only updates when you reopen the app. Changes from the IR remote show up right away.
 
 ## Ideas
 
 Under consideration, not planned.
 
 - Playback controls (prev / play-pause / next) via the AV transport service `DA6D0FB1`, as in KlipschRemote; play/pause is a stateless toggle, likely Bluetooth input only. Low value: when the phone is the one streaming, the lock screen and Control Center already control playback
+- Follow input changes made with the speaker's knob: no characteristic notifies on them (checked all 30, including the undocumented `DA6D0FD3`–`FD5`), but reading the input returns the new value, so re-reading it every ~2 s while the app is open would catch them
