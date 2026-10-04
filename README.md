@@ -11,7 +11,7 @@ The ones that bothered me most were:
 
 This is an iOS app that serves as a simple, fast remote control for the **Klipsch The Fives**, and should also work with The Sevens and The Nines (including McLaren editions), which share the same protocol.
 
-It is a fork of [wleese/KlipschControl](https://github.com/wleese/KlipschControl), which was built for the Klipsch The Three Plus. The Bluetooth protocol for The Fives (inputs byte map, characteristics) is ported from [Nixer1337/KlipschRemote](https://github.com/Nixer1337/KlipschRemote).
+It is a fork of [wleese/KlipschControl](https://github.com/wleese/KlipschControl), which was built for the Klipsch The Three Plus. The Bluetooth protocol for The Fives (inputs byte map, characteristics) is ported from [Nixer1337/KlipschRemote](https://github.com/Nixer1337/KlipschRemote), and was checked against the speaker with [ble-probe](https://github.com/andriyor/ble-probe), a small Python script using [bleak](https://github.com/hbldh/bleak) that subscribes to every characteristic and prints each change, to see which bytes the knob and remote update.
 
 ## Features
 
