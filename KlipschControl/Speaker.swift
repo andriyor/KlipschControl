@@ -79,6 +79,27 @@ let RESTORE_IDENTIFIER = "Klipsch The Fives"
 // KlipschRemote: by name, or by Klipsch's own service UUIDs, which a renamed speaker still advertises.
 let KLIPSCH_UUID_SUFFIX = "-442C-BABE-F85B5BAA6F11"
 
+// Model from the standard Device Information Service, using KlipschRemote's table (models.py).
+// The Fives and Fives McLaren share a model number and differ only by hardware revision.
+func klipschModelName(modelNumber: String?, hardwareRevision: String?) -> String? {
+    let rev = hardwareRevision.flatMap { Int($0) }
+    switch modelNumber {
+    case "1067563", "1067562": return rev == 3 ? "The Fives McLaren" : "The Fives"
+    case "1071199", "1071202": return "The Sevens"
+    case "1071200", "1071201": return "The Nines"
+    case "1071482": return "The Nines McLaren"
+    default: break
+    }
+    switch rev {
+    case 1, 2: return "The Fives"
+    case 3: return "The Fives McLaren"
+    case 4: return "The Sevens"
+    case 5: return "The Nines"
+    case 8: return "The Nines McLaren"
+    default: return nil
+    }
+}
+
 class Speaker: NSObject, CBCentralManagerDelegate, CBPeripheralDelegate, ObservableObject {
     
     let VOLUME_UUID = "DA6D0FA2-0D18-442C-BABE-F85B5BAA6F11"
@@ -110,6 +131,13 @@ class Speaker: NSObject, CBCentralManagerDelegate, CBPeripheralDelegate, Observa
     @Published var nightMode = false
     @Published var dynamicBass = false
     @Published var statusText = "Disconnected"
+    @Published var modelName: String?
+
+    // Device Information Service: model number and hardware revision, read once for the model name
+    let INFO_SERVICE_UUID = "180A"
+    let MODEL_NUMBER_UUID = "2A24"
+    let HARDWARE_REVISION_UUID = "2A27"
+    private var deviceInfo: [String: String] = [:]
     
     var UUIDS: [String] = []
     
@@ -138,7 +166,7 @@ class Speaker: NSObject, CBCentralManagerDelegate, CBPeripheralDelegate, Observa
             connectedPeripheral?.delegate = self
             deviceReady = false
             characteristics.removeAll()
-            peripheral.discoverServices([SERVICE_UUID, INPUT_SERVICE_UUID, EQ_SERVICE_UUID].map { CBUUID(string: $0) })
+            peripheral.discoverServices([SERVICE_UUID, INPUT_SERVICE_UUID, EQ_SERVICE_UUID, INFO_SERVICE_UUID].map { CBUUID(string: $0) })
             self.statusText = "Connecting to speaker"
             return
         }
@@ -209,7 +237,7 @@ class Speaker: NSObject, CBCentralManagerDelegate, CBPeripheralDelegate, Observa
         deviceReady = false
         characteristics.removeAll()
         logger.info("Reset BLE state after connect; discovering services")
-        peripheral.discoverServices([SERVICE_UUID, INPUT_SERVICE_UUID, EQ_SERVICE_UUID].map { CBUUID(string: $0) })
+        peripheral.discoverServices([SERVICE_UUID, INPUT_SERVICE_UUID, EQ_SERVICE_UUID, INFO_SERVICE_UUID].map { CBUUID(string: $0) })
         self.statusText = "Connecting to speaker"
     }
     
@@ -224,7 +252,7 @@ class Speaker: NSObject, CBCentralManagerDelegate, CBPeripheralDelegate, Observa
         logger.info("didDiscoverServices found \(services.count) service(s): \(services.map { $0.uuid.uuidString }.joined(separator: ", "))")
         for service in services {
             logger.info("Discovering characteristics for service \(service.uuid.uuidString)")
-            peripheral.discoverCharacteristics(UUIDS.map { CBUUID(string: $0) }, for: service)
+            peripheral.discoverCharacteristics((UUIDS + [MODEL_NUMBER_UUID, HARDWARE_REVISION_UUID]).map { CBUUID(string: $0) }, for: service)
         }
     }
     
@@ -238,6 +266,10 @@ class Speaker: NSObject, CBCentralManagerDelegate, CBPeripheralDelegate, Observa
         logger.info("Service \(service.uuid.uuidString) reported characteristic(s): \(discoveredCharacteristicUUIDs)")
         
         service.characteristics?.forEach({ characteristic in
+            // Not part of readiness: the model name is cosmetic
+            if [MODEL_NUMBER_UUID, HARDWARE_REVISION_UUID].contains(characteristic.uuid.uuidString) {
+                peripheral.readValue(for: characteristic)
+            }
             if UUIDS.contains(characteristic.uuid.uuidString) {
                 logger.info("Found tracked characteristic \(characteristic.uuid.uuidString)")
                 characteristics[characteristic.uuid.uuidString] = characteristic
@@ -282,6 +314,13 @@ class Speaker: NSObject, CBCentralManagerDelegate, CBPeripheralDelegate, Observa
         if characteristic.uuid.uuidString == INPUT_UUID {
             // nil for OFF or an unknown byte, so no tile is highlighted
             activeInput = characteristic.value?.first.flatMap(Input.init(rawValue:))
+        }
+
+        if [MODEL_NUMBER_UUID, HARDWARE_REVISION_UUID].contains(characteristic.uuid.uuidString), let data = characteristic.value {
+            deviceInfo[characteristic.uuid.uuidString] = String(decoding: data, as: UTF8.self)
+                .trimmingCharacters(in: .whitespacesAndNewlines.union(.controlCharacters))
+            modelName = klipschModelName(modelNumber: deviceInfo[MODEL_NUMBER_UUID], hardwareRevision: deviceInfo[HARDWARE_REVISION_UUID])
+            logger.info("Device info \(characteristic.uuid.uuidString): \(self.deviceInfo[characteristic.uuid.uuidString] ?? ""), model: \(self.modelName ?? "unknown")")
         }
 
         if EQ_UUIDS.contains(characteristic.uuid.uuidString), let byte = characteristic.value?.first {

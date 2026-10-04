@@ -18,7 +18,7 @@ struct ContentView: View {
     
     var body: some View {
         VStack {
-            Text("Speaker").font(.title).bold()
+            Text(speaker.modelName ?? "Speaker").font(.title).bold()
             
             let speakerImage = Image(systemName: "speaker.3.fill")
                 .font(.system(size: 140))
