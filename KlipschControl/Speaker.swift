@@ -177,7 +177,7 @@ class Speaker: NSObject, CBCentralManagerDelegate, CBPeripheralDelegate, Observa
         }
         logger.info("didDiscoverServices found \(services.count) service(s): \(services.map { $0.uuid.uuidString }.joined(separator: ", "))")
         for service in services {
-            self.statusText = "Found service \(peripheral.name as String?)"
+            self.statusText = "Found service on \(peripheral.name ?? "speaker")"
             logger.info("Discovering characteristics for service \(service.uuid.uuidString)")
             peripheral.discoverCharacteristics(nil, for: service)
         }
