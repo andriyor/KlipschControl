@@ -55,7 +55,6 @@ class Speaker: NSObject, CBCentralManagerDelegate, CBPeripheralDelegate, Observa
     let SERVICE_UUID = "DA6D0FA1-0D18-442C-BABE-F85B5BAA6F11"
     let MAX_VOLUME: UInt8 = 36
     
-    // Publish so our view is updated
     @Published var bluetoothReady = false
     @Published var deviceReady = false
     @Published var volume: UInt8 = 1
@@ -64,7 +63,6 @@ class Speaker: NSObject, CBCentralManagerDelegate, CBPeripheralDelegate, Observa
     
     var UUIDS: [String] = []
     
-    // Core Bluetooth properties
     var centralManager: CBCentralManager!
     
     var connectedPeripheral: CBPeripheral?
@@ -120,7 +118,6 @@ class Speaker: NSObject, CBCentralManagerDelegate, CBPeripheralDelegate, Observa
         }
     }
     
-    // Restore the connection to the peripherals
     func centralManager(_ central: CBCentralManager, willRestoreState dict: [String: Any]) {
         // Called before centralManagerDidUpdateState, so only remember the peripheral here;
         // the connect happens once Bluetooth is powered on.
@@ -150,17 +147,14 @@ class Speaker: NSObject, CBCentralManagerDelegate, CBPeripheralDelegate, Observa
             connectedPeripheral = peripheral
             connectedPeripheral!.delegate = self
             
-            // Request a connection to the peripheral
             logger.info("Attempting connection to discovered peripheral")
             centralManager.connect(connectedPeripheral!, options: nil)
             
-            // Stop scanning for peripherals
             centralManager.stopScan()
             logger.info("Stopped scanning after finding target peripheral")
         }
     }
     
-    // callback connect
     func centralManager(_ central: CBCentralManager, didConnect peripheral: CBPeripheral) {
         logger.info("didConnect fired for peripheral: \(peripheral.name ?? "unknown") [\(peripheral.identifier.uuidString)]")
         connectedPeripheral = peripheral
@@ -172,7 +166,6 @@ class Speaker: NSObject, CBCentralManagerDelegate, CBPeripheralDelegate, Observa
         self.statusText = "Connected to speaker"
     }
     
-    // callback service
     func peripheral( _ peripheral: CBPeripheral, didDiscoverServices error: Error?) {
         self.statusText = "Discovering services"
         if let error = error {
@@ -190,7 +183,6 @@ class Speaker: NSObject, CBCentralManagerDelegate, CBPeripheralDelegate, Observa
         }
     }
     
-    // callback found characteristic
     func peripheral(_ peripheral: CBPeripheral, didDiscoverCharacteristicsFor service: CBService, error: Error?) {
         self.statusText = "Discovered characteristic"
         if let error = error {
@@ -220,7 +212,7 @@ class Speaker: NSObject, CBCentralManagerDelegate, CBPeripheralDelegate, Observa
 
         // Mark the device as ready once all required characteristics are present.
         if characteristics.count == UUIDS.count {
-            self.statusText = "" // We're good, no need for status text
+            self.statusText = ""
             deviceReady = true
             logger.info("deviceReady set to true; discovered required characteristics: \(Array(self.characteristics.keys).sorted().joined(separator: ", "))")
         } else {
@@ -228,12 +220,7 @@ class Speaker: NSObject, CBCentralManagerDelegate, CBPeripheralDelegate, Observa
         }
     }
     
-    // callback update characteristic
-    func peripheral(_ peripheral: CBPeripheral, didUpdateNotificationStateFor characteristic: CBCharacteristic, error: Error?) {
-    }
-    
-    // callback characteristic update value
-    // using the read value also is done here
+    // Fires for both notifications and readValue results
     func peripheral(_ peripheral: CBPeripheral, didUpdateValueFor characteristic: CBCharacteristic, error: Error?) {
         if let e = error {
             self.statusText = "Error didUpdateValue \(e.localizedDescription)"
@@ -246,7 +233,6 @@ class Speaker: NSObject, CBCentralManagerDelegate, CBPeripheralDelegate, Observa
             let percentage = Int((Double(value) / 36.0) * 100.0)
             print("volume: \(value) (\(percentage)%)")
             volume = value
-            // Don't set deviceReady here - wait for all characteristics to be discovered
         }
 
         if characteristic.uuid.uuidString == INPUT_UUID {
@@ -255,7 +241,6 @@ class Speaker: NSObject, CBCentralManagerDelegate, CBPeripheralDelegate, Observa
         }
     }
     
-    // handle fail to connects
     func centralManager(_ central: CBCentralManager, didFailToConnect peripheral: CBPeripheral, error: Error?) {
         logger.error("didFailToConnect for peripheral: \(peripheral.name ?? "unknown") [\(peripheral.identifier.uuidString)] error: \(error?.localizedDescription ?? "none")")
         if let error = error {
@@ -263,7 +248,6 @@ class Speaker: NSObject, CBCentralManagerDelegate, CBPeripheralDelegate, Observa
         }
     }
     
-    // handle disconnects
     func centralManager(_ central: CBCentralManager, didDisconnectPeripheral peripheral: CBPeripheral, error: Error?) {
         logger.info("didDisconnectPeripheral for peripheral: \(peripheral.name ?? "unknown") [\(peripheral.identifier.uuidString)] error: \(error?.localizedDescription ?? "none")")
         deviceReady = false
