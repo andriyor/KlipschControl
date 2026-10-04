@@ -11,12 +11,6 @@ The ones that bothered me most were:
 
 This is an iOS app that serves as a simple, fast remote control for the **Klipsch The Fives**, and should also work with The Sevens and The Nines (including McLaren editions), which share the same protocol.
 
-## Inspired by and ported from
-
-* A fork of [wleese/KlipschControl](https://github.com/wleese/KlipschControl), which was built for the Klipsch The Three Plus. It has since been almost completely rewritten: over 80% of the current Swift code is new, and what remains from the original is mostly the app's skeleton (the CoreBluetooth delegate methods, the app and view structure, a few status messages).
-* The Bluetooth protocol for The Fives (input byte map, characteristics, EQ encoding, model numbers) is ported from [Nixer1337/KlipschRemote](https://github.com/Nixer1337/KlipschRemote).
-* The protocol was checked against the speaker with [ble-probe](https://github.com/andriyor/ble-probe), a small Python script using [bleak](https://github.com/hbldh/bleak) that subscribes to every characteristic and prints each change, to see which bytes the knob and remote update.
-
 ## Features
 
 * Fast and reliable connection, ~4 seconds versus ~15 for the official app, with no device chooser: reuses the link iOS already has to the speaker (`retrieveConnectedPeripherals`) instead of scanning, and only scans as a fallback, matching any Klipsch speaker by name or by its Klipsch service IDs (so a renamed speaker is still found)
@@ -28,12 +22,16 @@ This is an iOS app that serves as a simple, fast remote control for the **Klipsc
 * Shows the speaker model (The Fives, Sevens, Nines or a McLaren edition) in the header, read from the speaker's Device Information service
 * Until the speaker is ready, shows a connecting or Bluetooth-off placeholder instead of the controls
 
-## How did we get here?
+## Install
 
-At first the original author wanted to control a Klipsch The Three Plus with Home Assistant, but this didn't work.
-After some sleuthing, they learned that [BlueZ doesn't play well with this device](https://github.com/bluez/bluez/issues/712), even though Android, macOS and iOS worked fine.
+The app isn't on the App Store; build it with Xcode and run it on your own device.
 
-With this in mind, they settled on building a very simple app to act as a remote control.
+1. Open `KlipschControl.xcodeproj` in Xcode 26.2 or later.
+2. In the KlipschControl target → **Signing & Capabilities**, pick your **Team** and change the **Bundle Identifier** to something unique (e.g. `com.yourname.KlipschControl`).
+3. Connect an iPhone or iPad running iOS / iPadOS 26.2 or later, turn on **Settings → Privacy & Security → Developer Mode**, select it as the run destination and press **Run**.
+4. On first launch, trust the developer in **Settings → General → VPN & Device Management**.
+
+With a free Apple ID the app stops opening after 7 days and has to be run from Xcode again; with a paid Apple Developer Program membership it lasts a year.
 
 ## Comparison
 
@@ -70,3 +68,9 @@ Under consideration, not planned.
 
 - Playback controls (prev / play-pause / next) via the AV transport service `DA6D0FB1`, as in KlipschRemote; play/pause is a stateless toggle, likely Bluetooth input only. Low value: when the phone is the one streaming, the lock screen and Control Center already control playback
 - Follow input changes made with the speaker's knob: no characteristic notifies on them (checked all 30, including the undocumented `DA6D0FD3`–`FD5`), but reading the input returns the new value, so re-reading it every ~2 s while the app is open would catch them
+
+## Inspired by and ported from
+
+* A fork of [wleese/KlipschControl](https://github.com/wleese/KlipschControl), which was built for the Klipsch The Three Plus after BlueZ (and so Home Assistant) [couldn't talk to that speaker](https://github.com/bluez/bluez/issues/712). It has since been almost completely rewritten: over 80% of the current Swift code is new, and what remains from the original is mostly the app's skeleton (the CoreBluetooth delegate methods, the app and view structure, a few status messages).
+* The Bluetooth protocol for The Fives (input byte map, characteristics, EQ encoding, model numbers) is ported from [Nixer1337/KlipschRemote](https://github.com/Nixer1337/KlipschRemote).
+* The protocol was checked against the speaker with [ble-probe](https://github.com/andriyor/ble-probe), a small Python script using [bleak](https://github.com/hbldh/bleak) that subscribes to every characteristic and prints each change, to see which bytes the knob and remote update.
