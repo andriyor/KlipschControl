@@ -152,7 +152,7 @@ struct ContentView: View {
       .foregroundStyle(.secondary)
     }
     .padding(.horizontal, 8)
-    .padding(.top, 8)
+    .padding(.top, 16)
     .background(.bar)
   }
 }
