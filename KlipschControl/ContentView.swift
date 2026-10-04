@@ -37,45 +37,25 @@ struct ContentView: View {
         
         Divider()
         
-        VStack {
-            HStack {
-                let inputTv = Button(action: {
-                    speaker.switchInput(data: digital)
+        LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 3), spacing: 8) {
+            ForEach(Input.allCases, id: \.self) { input in
+                let selected = speaker.activeInput == input
+                Button(action: {
+                    if !selected { speaker.switchInput(input) }
                 }) {
-                    Text("Television")
-                        .padding(.horizontal, 30)
-                        .padding(.vertical, 16)
-                        .background(Color.blue)
-                        .foregroundColor(.white)
-                        .cornerRadius(10)
-                        .bold()
+                    VStack(spacing: 6) {
+                        Image(systemName: input.icon).font(.title2)
+                        Text(input.label).font(.caption).fontWeight(selected ? .bold : .regular)
+                    }
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 12)
+                    .background(selected ? Color.blue : Color.blue.opacity(0.15))
+                    .foregroundColor(selected ? .white : .blue)
+                    .cornerRadius(14)
                 }
-                
-                let inputUsbComputer = Button(action: {
-                    speaker.switchInput(data: usbComputer)
-                }) {
-                    Text("Speaker Only")
-                        .padding()
-                        .background(Color.blue)
-                        .foregroundColor(.white)
-                        .cornerRadius(10)
-                        .bold()
-                }
-                
-                if speaker.activeInput == digital {
-                    inputTv
-                } else {
-                    inputTv.opacity(0.7).fontWeight(.regular)
-                }
-                
-                if speaker.activeInput == usbComputer {
-                    inputUsbComputer
-                } else {
-                    inputUsbComputer.opacity(0.7).fontWeight(.regular)
-                }
-                
+                .animation(.easeInOut(duration: 0.15), value: selected)
             }
-        }.padding().padding()
+        }.padding()
         
         VStack {
             Text("Volume (\(Int(sliderValue) * 100 / Int(speaker.MAX_VOLUME))%)").font(.title3).bold()

@@ -11,11 +11,38 @@ import Combine
 
 import os.log
 
-let bluetooth = Data([0x00])
-let digital = Data([0x01])
-let usbComputer = Data([0x02])
-let usbStorage = Data([0x03])
-let analog = Data([0x04])
+// Input byte map for The Fives/Sevens/Nines, ported from KlipschRemote.
+// Declared in UI tile order; OFF (0) is left out because power-off is unreliable.
+enum Input: UInt8, CaseIterable {
+    case tv = 1
+    case bluetooth = 2
+    case optical = 3
+    case usb = 5
+    case aux = 4
+    case phono = 6
+
+    var label: String {
+        switch self {
+        case .tv: "TV"
+        case .bluetooth: "Bluetooth"
+        case .optical: "Optical"
+        case .usb: "USB"
+        case .aux: "Analog"
+        case .phono: "Phono"
+        }
+    }
+
+    var icon: String {
+        switch self {
+        case .tv: "tv"
+        case .bluetooth: "dot.radiowaves.left.and.right"
+        case .optical: "fibrechannel"
+        case .usb: "cable.connector"
+        case .aux: "cable.coaxial"
+        case .phono: "opticaldisc"
+        }
+    }
+}
 
 let logger = Logger(subsystem: "KlipschControl", category: "Speaker")
 
@@ -32,7 +59,7 @@ class Speaker: NSObject, CBCentralManagerDelegate, CBPeripheralDelegate, Observa
     @Published var bluetoothReady = false
     @Published var deviceReady = false
     @Published var volume = Data([0x01])
-    @Published var activeInput = Data([0x01])
+    @Published var activeInput: Input?
     @Published var statusText = "Disconnected"
     
     var UUIDS: [String] = []
@@ -235,8 +262,8 @@ class Speaker: NSObject, CBCentralManagerDelegate, CBPeripheralDelegate, Observa
         }
 
         if characteristic.uuid.uuidString == INPUT_UUID {
-            guard let data = characteristic.value else { return }
-            activeInput = data
+            // nil for OFF or an unknown byte, so no tile is highlighted
+            activeInput = characteristic.value?.first.flatMap(Input.init(rawValue:))
         }
     }
     
@@ -275,8 +302,8 @@ class Speaker: NSObject, CBCentralManagerDelegate, CBPeripheralDelegate, Observa
         }
     }
     
-    func switchInput(data: Data) {
-        self.connectedPeripheral?.writeValue(data, for: self.characteristics[INPUT_UUID]!, type: .withResponse)
+    func switchInput(_ input: Input) {
+        self.connectedPeripheral?.writeValue(Data([input.rawValue]), for: self.characteristics[INPUT_UUID]!, type: .withResponse)
     }
     
     func volumeUp() {
