@@ -77,28 +77,43 @@ struct InputTile: View {
     }
 }
 
-// One EQ band in -10...+6. Like the volume slider, it follows the speaker and writes only on release.
+// Follows a value from the speaker and writes back only on release; per-step writes would queue
+// up over BLE. Don't track drag state from onEditingChanged: on iOS 26 it fires an extra `true`
+// after release, which would leave it stuck. No `step:`, so round on release.
+struct SpeakerSlider: View {
+    // Where the thumb is, including mid-drag; the caller owns it to show a live value
+    @Binding var position: Double
+    let value: Int?
+    let range: ClosedRange<Int>
+    let onRelease: (Int) -> Void
+
+    var body: some View {
+        Slider(value: $position, in: Double(range.lowerBound)...Double(range.upperBound)) { editing in
+            if !editing {
+                position = position.rounded()
+                onRelease(Int(position))
+            }
+        }
+        .onChange(of: value, initial: true) {
+            if let value { position = Double(value) }
+        }
+    }
+}
+
+// One EQ band in -10...+6
 struct EQSlider: View {
     let label: String
     let level: Int?
     let onRelease: (Int) -> Void
-    @State private var value = 0.0
+    @State private var position = 0.0
 
     var body: some View {
         HStack {
             Text(label).frame(width: 56, alignment: .leading)
-            Slider(value: $value, in: -10...6) { editing in
-                if !editing {
-                    value = value.rounded()
-                    onRelease(Int(value))
-                }
-            }
-            Text(Int(value.rounded()).formatted(.number.sign(strategy: .always(includingZero: false))))
+            SpeakerSlider(position: $position, value: level, range: -10...6, onRelease: onRelease)
+            Text(Int(position.rounded()).formatted(.number.sign(strategy: .always(includingZero: false))))
                 .monospacedDigit()
                 .frame(width: 32, alignment: .trailing)
-        }
-        .onChange(of: level, initial: true) {
-            if let level { value = Double(level) }
         }
     }
 }

@@ -124,14 +124,8 @@ struct ContentView: View {
                 }
                 .accessibilityLabel("Volume down")
 
-                // Write only on release; per-step writes would queue up over BLE.
-                // Don't track drag state from onEditingChanged: on iOS 26 it fires an extra
-                // `true` after release, which would leave it stuck. No `step:`, so round here.
-                Slider(value: $sliderValue, in: 0...Double(speaker.MAX_VOLUME)) { editing in
-                    if !editing {
-                        sliderValue = sliderValue.rounded()
-                        speaker.setVolume(UInt8(sliderValue))
-                    }
+                SpeakerSlider(position: $sliderValue, value: Int(speaker.volume), range: 0...Int(speaker.MAX_VOLUME)) {
+                    speaker.setVolume(UInt8($0))
                 }
                 .accessibilityLabel("Volume")
 
@@ -145,9 +139,6 @@ struct ContentView: View {
         .padding(.horizontal, 8)
         .padding(.top, 8)
         .background(.bar)
-        .onChange(of: speaker.volume, initial: true) {
-            sliderValue = Double(speaker.volume)
-        }
     }
 }
 
