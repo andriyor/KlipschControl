@@ -17,7 +17,7 @@ It is a fork of [wleese/KlipschControl](https://github.com/wleese/KlipschControl
 
 * Fast and reliable connection, ~4 seconds versus ~15 for the official app, with no device chooser: reuses the link iOS already has to the speaker (`retrieveConnectedPeripherals`) instead of scanning, and only scans as a fallback, matching any Klipsch speaker by name or by its Klipsch service IDs (so a renamed speaker is still found)
 * Restores the connection when iOS relaunches the app, and reconnects on its own after an unexpected disconnect
-* Volume: slider plus −/+ buttons, shown as a percentage; follows the speaker's knob and remote live
+* Volume: a bar pinned to the bottom of the screen, with a slider between speaker icons that step it down or up (like Apple Music); follows the speaker's knob and remote live
 * Input: TV, Bluetooth, Optical, USB, Analog and Phono; the active input is highlighted and follows the speaker's remote
 * EQ: presets Flat, Vocal, Bass, Rock and Boom, plus bass, mid and treble sliders (−10 to +6); shows Custom when the bands don't match a preset
 * Dynamic Bass and Night Mode switches

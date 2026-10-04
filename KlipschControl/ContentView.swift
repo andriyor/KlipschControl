@@ -87,35 +87,32 @@ struct ContentView: View {
         }
         // Pinned under the thumb and visible however far the cards scroll
         .safeAreaInset(edge: .bottom) {
-            VStack(alignment: .leading, spacing: 8) {
-                Label("Volume (\(Int(sliderValue.rounded()) * 100 / Int(speaker.MAX_VOLUME))%)", systemImage: "speaker.wave.2.fill")
-                    .font(.headline)
+            // Like Apple Music, but the speaker icons step the volume by one for fine control
+            HStack(spacing: 4) {
+                Button(action: { speaker.volumeDown() }) {
+                    Image(systemName: "speaker.fill").frame(width: 44, height: 44)
+                }
+                .accessibilityLabel("Volume down")
 
-                HStack {
-                    Button(action: {
-                        speaker.volumeDown()
-                    }) {
-                        Image(systemName: "minus.circle.fill").font(.title)
-                    }
-
-                    // Write only on release; per-step writes would queue up over BLE.
-                    // Don't track drag state from onEditingChanged: on iOS 26 it fires an extra
-                    // `true` after release, which would leave it stuck. No `step:`, so round here.
-                    Slider(value: $sliderValue, in: 0...Double(speaker.MAX_VOLUME)) { editing in
-                        if !editing {
-                            sliderValue = sliderValue.rounded()
-                            speaker.setVolume(UInt8(sliderValue))
-                        }
-                    }
-
-                    Button(action: {
-                        speaker.volumeUp()
-                    }) {
-                        Image(systemName: "plus.circle.fill").font(.title)
+                // Write only on release; per-step writes would queue up over BLE.
+                // Don't track drag state from onEditingChanged: on iOS 26 it fires an extra
+                // `true` after release, which would leave it stuck. No `step:`, so round here.
+                Slider(value: $sliderValue, in: 0...Double(speaker.MAX_VOLUME)) { editing in
+                    if !editing {
+                        sliderValue = sliderValue.rounded()
+                        speaker.setVolume(UInt8(sliderValue))
                     }
                 }
+                .accessibilityLabel("Volume")
+
+                Button(action: { speaker.volumeUp() }) {
+                    Image(systemName: "speaker.wave.3.fill").frame(width: 44, height: 44)
+                }
+                .accessibilityLabel("Volume up")
             }
-            .padding()
+            .foregroundStyle(.secondary)
+            .padding(.horizontal, 8)
+            .padding(.vertical, 4)
             .background(.bar)
             .disabled(!speaker.deviceReady)
             .onChange(of: speaker.volume, initial: true) {
