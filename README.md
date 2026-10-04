@@ -51,6 +51,7 @@ In short: use the official app for firmware updates and first setup, KlipschRemo
 * Only The Fives is supported, and the device name `Klipsch The Fives` is hardcoded in `Speaker.swift`.
 * Only volume, input, EQ presets, Dynamic Bass and Night Mode are implemented; no EQ sliders, speaker placement, subwoofer or device settings.
 * Switching from Bluetooth to another input and back drops the phone's audio connection: the speaker's Bluetooth light blinks and you have to reconnect it in iOS Settings → Bluetooth. This is the speaker's firmware: it happens with the official app and KlipschRemote too, while switching with the speaker's own knob reconnects audio by itself. iOS apps can't start an audio connection, so the app can't fix it. The app's own control connection is not affected.
+* Dynamic Bass and Night Mode are linked on the speaker: turning Night Mode on turns Dynamic Bass off, and turning Night Mode off (or Dynamic Bass on) restores Dynamic Bass to what it was before Night Mode. The two switches show what the speaker does, so turning Dynamic Bass on from Night Mode may need a second tap.
 * Changing the input with the speaker's knob doesn't notify the app, so the highlighted input only updates on the next connect (changes from the IR remote do show up).
 
 # TODO

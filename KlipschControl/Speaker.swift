@@ -70,20 +70,6 @@ enum EQPreset: CaseIterable {
     }
 }
 
-// Dynamic Bass and Night Mode can't both be on. Turning Night Mode off makes the speaker switch
-// Dynamic Bass back on by itself, so "Off" from Night Mode needs a second write afterwards.
-enum SoundMode: CaseIterable {
-    case off, dynamicBass, night
-
-    var label: String {
-        switch self {
-        case .off: "Off"
-        case .dynamicBass: "Dynamic Bass"
-        case .night: "Night Mode"
-        }
-    }
-}
-
 let logger = Logger(subsystem: "KlipschControl", category: "Speaker")
 
 let DEVICE_NAME = "Klipsch The Fives"
@@ -101,7 +87,12 @@ class Speaker: NSObject, CBCentralManagerDelegate, CBPeripheralDelegate, Observa
         "DA6D0F03-0D18-442C-BABE-F85B5BAA6F11",
         "DA6D0F04-0D18-442C-BABE-F85B5BAA6F11",
     ]
-    // On/off modes in the EQ service; one byte, 0 or 1
+    // On/off modes in the EQ service; one byte, 0 or 1. Each switch writes only its own value and
+    // the speaker's notifications drive the other, because the speaker links them (tested on
+    // The Fives): Night Mode on turns Dynamic Bass off and remembers its value; leaving Night Mode
+    // (Night Mode off, or Dynamic Bass on) restores that remembered value a moment later. Hiding
+    // this behind a single Off / Dynamic Bass / Night Mode picker needed sequenced writes and still
+    // flickered, so the switches show what the speaker does instead.
     let NIGHT_MODE_UUID = "DA6D0F05-0D18-442C-BABE-F85B5BAA6F11"
     let DYNAMIC_BASS_UUID = "DA6D0F14-0D18-442C-BABE-F85B5BAA6F11"
     let MAX_VOLUME: UInt8 = 36
@@ -113,8 +104,6 @@ class Speaker: NSObject, CBCentralManagerDelegate, CBPeripheralDelegate, Observa
     @Published var eqLevels: [String: Int] = [:]
     @Published var nightMode = false
     @Published var dynamicBass = false
-    // Set while switching Night Mode -> Off: turn Dynamic Bass off once the speaker re-enables it
-    private var bassOffAfterNight = false
     @Published var statusText = "Disconnected"
     
     var UUIDS: [String] = []
@@ -297,16 +286,8 @@ class Speaker: NSObject, CBCentralManagerDelegate, CBPeripheralDelegate, Observa
         }
 
         if let byte = characteristic.value?.first {
-            if characteristic.uuid.uuidString == NIGHT_MODE_UUID {
-                nightMode = byte != 0
-            }
-            if characteristic.uuid.uuidString == DYNAMIC_BASS_UUID {
-                dynamicBass = byte != 0
-                if dynamicBass, bassOffAfterNight {
-                    bassOffAfterNight = false
-                    writeMode(DYNAMIC_BASS_UUID, false)
-                }
-            }
+            if characteristic.uuid.uuidString == NIGHT_MODE_UUID { nightMode = byte != 0 }
+            if characteristic.uuid.uuidString == DYNAMIC_BASS_UUID { dynamicBass = byte != 0 }
         }
     }
     
@@ -363,35 +344,21 @@ class Speaker: NSObject, CBCentralManagerDelegate, CBPeripheralDelegate, Observa
         }
     }
 
-    var soundMode: SoundMode {
-        nightMode ? .night : dynamicBass ? .dynamicBass : .off
+    func setNightMode(_ on: Bool) {
+        guard writeToggle(NIGHT_MODE_UUID, on) else { return }
+        nightMode = on
     }
 
-    // Only write Night Mode when it actually changes: writing it off re-enables Dynamic Bass
-    func setSoundMode(_ mode: SoundMode) {
-        guard deviceReady else { return }
-        bassOffAfterNight = false
-        switch mode {
-        case .night:
-            writeMode(NIGHT_MODE_UUID, true)
-        case .dynamicBass:
-            if nightMode { writeMode(NIGHT_MODE_UUID, false) } else { writeMode(DYNAMIC_BASS_UUID, true) }
-        case .off:
-            if nightMode {
-                bassOffAfterNight = true
-                writeMode(NIGHT_MODE_UUID, false)
-            } else {
-                writeMode(DYNAMIC_BASS_UUID, false)
-            }
-        }
-        // Shown right away; the speaker's notifications correct it if needed
-        nightMode = mode == .night
-        dynamicBass = mode == .dynamicBass
+    func setDynamicBass(_ on: Bool) {
+        guard writeToggle(DYNAMIC_BASS_UUID, on) else { return }
+        dynamicBass = on
     }
 
-    private func writeMode(_ uuid: String, _ on: Bool) {
-        guard let characteristic = characteristics[uuid] else { return }
+    // Shown right away; the speaker's notifications then update both switches
+    private func writeToggle(_ uuid: String, _ on: Bool) -> Bool {
+        guard deviceReady, let characteristic = characteristics[uuid] else { return false }
         connectedPeripheral?.writeValue(Data([on ? 1 : 0]), for: characteristic, type: .withResponse)
+        return true
     }
 
     func volumeUp() {
