@@ -73,7 +73,7 @@ struct ContentView: View {
                 Slider(value: $sliderValue, in: 0...Double(speaker.MAX_VOLUME)) { editing in
                     if !editing {
                         sliderValue = sliderValue.rounded()
-                        speaker.volume(data: Data([UInt8(sliderValue)]))
+                        speaker.setVolume(UInt8(sliderValue))
                     }
                 }
 
@@ -86,9 +86,7 @@ struct ContentView: View {
         }.padding()
         .disabled(!speaker.deviceReady)
         .onChange(of: speaker.volume, initial: true) {
-            if let value = speaker.volume.first {
-                sliderValue = Double(value)
-            }
+            sliderValue = Double(speaker.volume)
         }
         
         Spacer()

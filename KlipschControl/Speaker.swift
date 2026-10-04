@@ -58,7 +58,7 @@ class Speaker: NSObject, CBCentralManagerDelegate, CBPeripheralDelegate, Observa
     // Publish so our view is updated
     @Published var bluetoothReady = false
     @Published var deviceReady = false
-    @Published var volume = Data([0x01])
+    @Published var volume: UInt8 = 1
     @Published var activeInput: Input?
     @Published var statusText = "Disconnected"
     
@@ -242,10 +242,10 @@ class Speaker: NSObject, CBCentralManagerDelegate, CBPeripheralDelegate, Observa
 
         if characteristic.uuid.uuidString == VOLUME_UUID {
             // Ignore empty values instead of storing them as the volume
-            guard let data = characteristic.value, let integerValue = data.first else { return }
-            let percentage = Int((Double(integerValue) / 36.0) * 100.0)
-            print("volume: \(integerValue) (\(percentage)%)")
-            volume = data
+            guard let value = characteristic.value?.first else { return }
+            let percentage = Int((Double(value) / 36.0) * 100.0)
+            print("volume: \(value) (\(percentage)%)")
+            volume = value
             // Don't set deviceReady here - wait for all characteristics to be discovered
         }
 
@@ -294,17 +294,17 @@ class Speaker: NSObject, CBCentralManagerDelegate, CBPeripheralDelegate, Observa
     }
     
     func volumeUp() {
-        guard let integerValue = self.volume.first, integerValue < MAX_VOLUME else { return }
-        volume(data: Data([integerValue + 1]))
+        guard volume < MAX_VOLUME else { return }
+        setVolume(volume + 1)
     }
 
     func volumeDown() {
-        guard let integerValue = self.volume.first, integerValue > 0 else { return }
-        volume(data: Data([integerValue - 1]))
+        guard volume > 0 else { return }
+        setVolume(volume - 1)
     }
-    
-    func volume(data: Data) {
+
+    func setVolume(_ value: UInt8) {
         guard deviceReady, let characteristic = characteristics[VOLUME_UUID] else { return }
-        self.connectedPeripheral?.writeValue(data, for: characteristic, type: .withResponse)
+        self.connectedPeripheral?.writeValue(Data([value]), for: characteristic, type: .withResponse)
     }
 }
