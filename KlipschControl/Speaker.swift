@@ -13,21 +13,21 @@ import os.log
 let logger = Logger(subsystem: "KlipschControl", category: "Speaker")
 
 // Only the state-restoration key now; changing it would drop restoration for existing installs
-let RESTORE_IDENTIFIER = "Klipsch The Fives"
+let restoreIdentifier = "Klipsch The Fives"
 
 // The Fives, Sevens and Nines (incl. McLaren) share one protocol. Match any of them like
 // KlipschRemote: by name, or by Klipsch's own service UUIDs, which a renamed speaker still advertises.
-let KLIPSCH_UUID_SUFFIX = "-442C-BABE-F85B5BAA6F11"
+let klipschUUIDSuffix = "-442C-BABE-F85B5BAA6F11"
 
 class Speaker: NSObject, CBCentralManagerDelegate, CBPeripheralDelegate, ObservableObject {
 
-  let VOLUME_UUID = "DA6D0FA2-0D18-442C-BABE-F85B5BAA6F11"
-  let INPUT_UUID = "DA6D0FD2-0D18-442C-BABE-F85B5BAA6F11"
-  let SERVICE_UUID = "DA6D0FA1-0D18-442C-BABE-F85B5BAA6F11"
-  let INPUT_SERVICE_UUID = "DA6D0FD1-0D18-442C-BABE-F85B5BAA6F11"
-  let EQ_SERVICE_UUID = "DA6D0F01-0D18-442C-BABE-F85B5BAA6F11"
+  let volumeUUID = "DA6D0FA2-0D18-442C-BABE-F85B5BAA6F11"
+  let inputUUID = "DA6D0FD2-0D18-442C-BABE-F85B5BAA6F11"
+  let serviceUUID = "DA6D0FA1-0D18-442C-BABE-F85B5BAA6F11"
+  let inputServiceUUID = "DA6D0FD1-0D18-442C-BABE-F85B5BAA6F11"
+  let eqServiceUUID = "DA6D0F01-0D18-442C-BABE-F85B5BAA6F11"
   // Bass, mid, treble; one byte each, level + 10 (flat = 10)
-  let EQ_UUIDS = [
+  let eqUUIDs = [
     "DA6D0F02-0D18-442C-BABE-F85B5BAA6F11",
     "DA6D0F03-0D18-442C-BABE-F85B5BAA6F11",
     "DA6D0F04-0D18-442C-BABE-F85B5BAA6F11",
@@ -38,9 +38,9 @@ class Speaker: NSObject, CBCentralManagerDelegate, CBPeripheralDelegate, Observa
   // (Night Mode off, or Dynamic Bass on) restores that remembered value a moment later. Hiding
   // this behind a single Off / Dynamic Bass / Night Mode picker needed sequenced writes and still
   // flickered, so the switches show what the speaker does instead.
-  let NIGHT_MODE_UUID = "DA6D0F05-0D18-442C-BABE-F85B5BAA6F11"
-  let DYNAMIC_BASS_UUID = "DA6D0F14-0D18-442C-BABE-F85B5BAA6F11"
-  let MAX_VOLUME: UInt8 = 36
+  let nightModeUUID = "DA6D0F05-0D18-442C-BABE-F85B5BAA6F11"
+  let dynamicBassUUID = "DA6D0F14-0D18-442C-BABE-F85B5BAA6F11"
+  let maxVolume: UInt8 = 36
 
   @Published var bluetoothReady = false
   @Published var deviceReady = false
@@ -53,12 +53,12 @@ class Speaker: NSObject, CBCentralManagerDelegate, CBPeripheralDelegate, Observa
   @Published var modelName: String?
 
   // Device Information Service: model number and hardware revision, read once for the model name
-  let INFO_SERVICE_UUID = "180A"
-  let MODEL_NUMBER_UUID = "2A24"
-  let HARDWARE_REVISION_UUID = "2A27"
+  let infoServiceUUID = "180A"
+  let modelNumberUUID = "2A24"
+  let hardwareRevisionUUID = "2A27"
   private var deviceInfo: [String: String] = [:]
 
-  var UUIDS: [String] = []
+  var trackedUUIDs: [String] = []
 
   var centralManager: CBCentralManager!
 
@@ -68,10 +68,10 @@ class Speaker: NSObject, CBCentralManagerDelegate, CBPeripheralDelegate, Observa
 
   override init() {
     super.init()
-    UUIDS = [VOLUME_UUID, INPUT_UUID, NIGHT_MODE_UUID, DYNAMIC_BASS_UUID] + EQ_UUIDS
+    trackedUUIDs = [volumeUUID, inputUUID, nightModeUUID, dynamicBassUUID] + eqUUIDs
     centralManager = CBCentralManager(
       delegate: self, queue: DispatchQueue.main,
-      options: [CBCentralManagerOptionRestoreIdentifierKey: RESTORE_IDENTIFIER])
+      options: [CBCentralManagerOptionRestoreIdentifierKey: restoreIdentifier])
   }
 
   func triggerScan() {
@@ -84,7 +84,7 @@ class Speaker: NSObject, CBCentralManagerDelegate, CBPeripheralDelegate, Observa
     )
 
     let connectedPeripherals = centralManager.retrieveConnectedPeripherals(withServices: [
-      CBUUID(string: SERVICE_UUID)
+      CBUUID(string: serviceUUID)
     ])
 
     // Everything returned here exposes Klipsch's volume service
@@ -140,19 +140,19 @@ class Speaker: NSObject, CBCentralManagerDelegate, CBPeripheralDelegate, Observa
 
   func centralManager(
     _ central: CBCentralManager, didDiscover peripheral: CBPeripheral,
-    advertisementData: [String: Any], rssi RSSI: NSNumber
+    advertisementData: [String: Any], rssi: NSNumber
   ) {
     let name =
       advertisementData[CBAdvertisementDataLocalNameKey] as? String ?? peripheral.name ?? "unknown"
     let services = advertisementData[CBAdvertisementDataServiceUUIDsKey] as? [CBUUID] ?? []
     let isKlipsch =
       name.localizedCaseInsensitiveContains("Klipsch")
-      || services.contains { $0.uuidString.uppercased().hasSuffix(KLIPSCH_UUID_SUFFIX) }
+      || services.contains { $0.uuidString.uppercased().hasSuffix(klipschUUIDSuffix) }
 
     if isKlipsch {
       self.statusText = "Connecting to speaker"
       logger.info(
-        "Matched Klipsch speaker: \(name) [\(peripheral.identifier.uuidString)] RSSI: \(RSSI)")
+        "Matched Klipsch speaker: \(name) [\(peripheral.identifier.uuidString)] RSSI: \(rssi)")
 
       connectedPeripheral = peripheral
       connectedPeripheral!.delegate = self
@@ -180,7 +180,7 @@ class Speaker: NSObject, CBCentralManagerDelegate, CBPeripheralDelegate, Observa
     characteristics.removeAll()
     logger.info("Reset BLE state; discovering services")
     peripheral.discoverServices(
-      [SERVICE_UUID, INPUT_SERVICE_UUID, EQ_SERVICE_UUID, INFO_SERVICE_UUID].map {
+      [serviceUUID, inputServiceUUID, eqServiceUUID, infoServiceUUID].map {
         CBUUID(string: $0)
       })
     self.statusText = "Connecting to speaker"
@@ -200,7 +200,7 @@ class Speaker: NSObject, CBCentralManagerDelegate, CBPeripheralDelegate, Observa
     for service in services {
       logger.info("Discovering characteristics for service \(service.uuid.uuidString)")
       peripheral.discoverCharacteristics(
-        (UUIDS + [MODEL_NUMBER_UUID, HARDWARE_REVISION_UUID]).map { CBUUID(string: $0) },
+        (trackedUUIDs + [modelNumberUUID, hardwareRevisionUUID]).map { CBUUID(string: $0) },
         for: service)
     }
   }
@@ -224,10 +224,10 @@ class Speaker: NSObject, CBCentralManagerDelegate, CBPeripheralDelegate, Observa
 
     service.characteristics?.forEach({ characteristic in
       // Not part of readiness: the model name is cosmetic
-      if [MODEL_NUMBER_UUID, HARDWARE_REVISION_UUID].contains(characteristic.uuid.uuidString) {
+      if [modelNumberUUID, hardwareRevisionUUID].contains(characteristic.uuid.uuidString) {
         peripheral.readValue(for: characteristic)
       }
-      if UUIDS.contains(characteristic.uuid.uuidString) {
+      if trackedUUIDs.contains(characteristic.uuid.uuidString) {
         logger.info("Found tracked characteristic \(characteristic.uuid.uuidString)")
         characteristics[characteristic.uuid.uuidString] = characteristic
 
@@ -247,7 +247,7 @@ class Speaker: NSObject, CBCentralManagerDelegate, CBPeripheralDelegate, Observa
     })
 
     // Mark the device as ready once all required characteristics are present.
-    if characteristics.count == UUIDS.count {
+    if characteristics.count == trackedUUIDs.count {
       self.statusText = "Connected"
       deviceReady = true
       logger.info(
@@ -255,7 +255,7 @@ class Speaker: NSObject, CBCentralManagerDelegate, CBPeripheralDelegate, Observa
       )
     } else {
       logger.info(
-        "deviceReady still false; have \(self.characteristics.count)/\(self.UUIDS.count) required characteristics: \(Array(self.characteristics.keys).sorted().joined(separator: ", "))"
+        "deviceReady still false; have \(self.characteristics.count)/\(self.trackedUUIDs.count) required characteristics: \(Array(self.characteristics.keys).sorted().joined(separator: ", "))"
       )
     }
   }
@@ -269,7 +269,7 @@ class Speaker: NSObject, CBCentralManagerDelegate, CBPeripheralDelegate, Observa
       return
     }
 
-    if characteristic.uuid.uuidString == VOLUME_UUID {
+    if characteristic.uuid.uuidString == volumeUUID {
       // Ignore empty values instead of storing them as the volume
       guard let value = characteristic.value?.first else { return }
       let percentage = Int((Double(value) / 36.0) * 100.0)
@@ -277,31 +277,31 @@ class Speaker: NSObject, CBCentralManagerDelegate, CBPeripheralDelegate, Observa
       volume = value
     }
 
-    if characteristic.uuid.uuidString == INPUT_UUID {
+    if characteristic.uuid.uuidString == inputUUID {
       // nil for OFF or an unknown byte, so no tile is highlighted
       activeInput = characteristic.value?.first.flatMap(Input.init(rawValue:))
     }
 
-    if [MODEL_NUMBER_UUID, HARDWARE_REVISION_UUID].contains(characteristic.uuid.uuidString),
+    if [modelNumberUUID, hardwareRevisionUUID].contains(characteristic.uuid.uuidString),
       let data = characteristic.value
     {
       deviceInfo[characteristic.uuid.uuidString] = String(decoding: data, as: UTF8.self)
         .trimmingCharacters(in: .whitespacesAndNewlines.union(.controlCharacters))
       modelName = klipschModelName(
-        modelNumber: deviceInfo[MODEL_NUMBER_UUID],
-        hardwareRevision: deviceInfo[HARDWARE_REVISION_UUID])
+        modelNumber: deviceInfo[modelNumberUUID],
+        hardwareRevision: deviceInfo[hardwareRevisionUUID])
       logger.info(
         "Device info \(characteristic.uuid.uuidString): \(self.deviceInfo[characteristic.uuid.uuidString] ?? ""), model: \(self.modelName ?? "unknown")"
       )
     }
 
-    if EQ_UUIDS.contains(characteristic.uuid.uuidString), let byte = characteristic.value?.first {
+    if eqUUIDs.contains(characteristic.uuid.uuidString), let byte = characteristic.value?.first {
       eqLevels[characteristic.uuid.uuidString] = Int(byte) - 10
     }
 
     if let byte = characteristic.value?.first {
-      if characteristic.uuid.uuidString == NIGHT_MODE_UUID { nightMode = byte != 0 }
-      if characteristic.uuid.uuidString == DYNAMIC_BASS_UUID { dynamicBass = byte != 0 }
+      if characteristic.uuid.uuidString == nightModeUUID { nightMode = byte != 0 }
+      if characteristic.uuid.uuidString == dynamicBassUUID { dynamicBass = byte != 0 }
     }
   }
 
@@ -345,7 +345,7 @@ class Speaker: NSObject, CBCentralManagerDelegate, CBPeripheralDelegate, Observa
   }
 
   func switchInput(_ input: Input) {
-    guard deviceReady, let characteristic = characteristics[INPUT_UUID] else { return }
+    guard deviceReady, let characteristic = characteristics[inputUUID] else { return }
     self.connectedPeripheral?.writeValue(
       Data([input.rawValue]), for: characteristic, type: .withResponse)
   }
@@ -353,12 +353,12 @@ class Speaker: NSObject, CBCentralManagerDelegate, CBPeripheralDelegate, Observa
   // nil when the bands don't match any preset (set from another app)
   var activePreset: EQPreset? {
     EQPreset.allCases.first { preset in
-      zip(EQ_UUIDS, preset.levels).allSatisfy { eqLevels[$0] == $1 }
+      zip(eqUUIDs, preset.levels).allSatisfy { eqLevels[$0] == $1 }
     }
   }
 
   func applyPreset(_ preset: EQPreset) {
-    for (uuid, level) in zip(EQ_UUIDS, preset.levels) {
+    for (uuid, level) in zip(eqUUIDs, preset.levels) {
       setEQLevel(uuid, level)
     }
   }
@@ -373,12 +373,12 @@ class Speaker: NSObject, CBCentralManagerDelegate, CBPeripheralDelegate, Observa
   }
 
   func setNightMode(_ on: Bool) {
-    guard writeToggle(NIGHT_MODE_UUID, on) else { return }
+    guard writeToggle(nightModeUUID, on) else { return }
     nightMode = on
   }
 
   func setDynamicBass(_ on: Bool) {
-    guard writeToggle(DYNAMIC_BASS_UUID, on) else { return }
+    guard writeToggle(dynamicBassUUID, on) else { return }
     dynamicBass = on
   }
 
@@ -390,7 +390,7 @@ class Speaker: NSObject, CBCentralManagerDelegate, CBPeripheralDelegate, Observa
   }
 
   func volumeUp() {
-    guard volume < MAX_VOLUME else { return }
+    guard volume < maxVolume else { return }
     setVolume(volume + 1)
   }
 
@@ -400,7 +400,7 @@ class Speaker: NSObject, CBCentralManagerDelegate, CBPeripheralDelegate, Observa
   }
 
   func setVolume(_ value: UInt8) {
-    guard deviceReady, let characteristic = characteristics[VOLUME_UUID] else { return }
+    guard deviceReady, let characteristic = characteristics[volumeUUID] else { return }
     self.connectedPeripheral?.writeValue(Data([value]), for: characteristic, type: .withResponse)
   }
 }

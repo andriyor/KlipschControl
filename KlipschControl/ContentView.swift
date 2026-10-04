@@ -90,7 +90,7 @@ struct ContentView: View {
         }
         .pickerStyle(.segmented)
 
-        ForEach(Array(zip(["Bass", "Mid", "Treble"], speaker.EQ_UUIDS)), id: \.1) { label, uuid in
+        ForEach(Array(zip(["Bass", "Mid", "Treble"], speaker.eqUUIDs)), id: \.1) { label, uuid in
           EQSlider(label: label, level: speaker.eqLevels[uuid]) { speaker.setEQLevel(uuid, $0) }
         }
       }
@@ -137,7 +137,7 @@ struct ContentView: View {
         .accessibilityLabel("Volume down")
 
         SpeakerSlider(
-          position: $sliderValue, value: Int(speaker.volume), range: 0...Int(speaker.MAX_VOLUME)
+          position: $sliderValue, value: Int(speaker.volume), range: 0...Int(speaker.maxVolume)
         ) {
           speaker.setVolume(UInt8($0))
         }
