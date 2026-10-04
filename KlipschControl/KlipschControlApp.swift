@@ -22,8 +22,6 @@ class Speaker: NSObject, CBCentralManagerDelegate, CBPeripheralDelegate, Observa
     let INPUT_UUID = "DA6D0FD2-0D18-442C-BABE-F85B5BAA6F11"
     let SERVICE_UUID = "DA6D0FA1-0D18-442C-BABE-F85B5BAA6F11"
     
-    let objectWillChange = ObservableObjectPublisher()
-    
     // Publish so our view is updated
     @Published var bluetoothReady = false
     @Published var deviceReady = false
@@ -180,18 +178,16 @@ class Speaker: NSObject, CBCentralManagerDelegate, CBPeripheralDelegate, Observa
                 logger.info("Found tracked characteristic \(characteristic.uuid.uuidString)")
                 characteristics[characteristic.uuid.uuidString] = characteristic
                 peripheral.discoverDescriptors(for: characteristic)
-                
-                // read the volume value
-                if characteristic.uuid.uuidString == VOLUME_UUID {
-                    logger.info("Reading initial volume value from \(characteristic.uuid.uuidString)")
-                    peripheral.readValue(for: characteristic)
+
+                // Subscribe right away so changes made on the speaker (remote, knob) reach the app
+                if characteristic.properties.contains(.notify) || characteristic.properties.contains(.indicate) {
+                    peripheral.setNotifyValue(true, for: characteristic)
+                } else {
+                    logger.warning("Characteristic \(characteristic.uuid.uuidString) does not support notifications")
                 }
-                
-                // read the input value
-                if characteristic.uuid.uuidString == INPUT_UUID {
-                    logger.info("Reading initial input value from \(characteristic.uuid.uuidString)")
-                    peripheral.readValue(for: characteristic)
-                }
+
+                logger.info("Reading initial value from \(characteristic.uuid.uuidString)")
+                peripheral.readValue(for: characteristic)
             }
         })
 
@@ -272,7 +268,6 @@ class Speaker: NSObject, CBCentralManagerDelegate, CBPeripheralDelegate, Observa
     }
     
     func switchInput(data: Data) {
-        self.connectedPeripheral?.setNotifyValue(true, for: self.characteristics[INPUT_UUID]!)
         self.connectedPeripheral?.writeValue(data, for: self.characteristics[INPUT_UUID]!, type: .withResponse)
     }
     
@@ -288,7 +283,6 @@ class Speaker: NSObject, CBCentralManagerDelegate, CBPeripheralDelegate, Observa
     
     func volume(data: Data) {
         print("Characteristics: \(self.characteristics)")
-        self.connectedPeripheral?.setNotifyValue(true, for: self.characteristics[VOLUME_UUID]!)
         self.connectedPeripheral?.writeValue(data, for: self.characteristics[VOLUME_UUID]!, type: .withResponse)
     }
 }
