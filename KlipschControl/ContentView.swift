@@ -9,9 +9,8 @@ import SwiftUI
 
 struct ContentView: View {
     @StateObject var speaker: Speaker
-    // Local slider position, so speaker notifications don't move it while dragging
+    // Local slider position; follows speaker.volume, written to the speaker on release
     @State private var sliderValue = 0.0
-    @State private var isDragging = false
 
     init(speaker: Speaker) {
         _speaker = StateObject(wrappedValue: speaker)
@@ -59,7 +58,7 @@ struct ContentView: View {
         .disabled(!speaker.deviceReady)
         
         VStack {
-            Text("Volume (\(Int(sliderValue) * 100 / Int(speaker.MAX_VOLUME))%)").font(.title3).bold()
+            Text("Volume (\(Int(sliderValue.rounded()) * 100 / Int(speaker.MAX_VOLUME))%)").font(.title3).bold()
 
             HStack {
                 Button(action: {
@@ -68,10 +67,12 @@ struct ContentView: View {
                     Image(systemName: "minus.circle.fill").font(.title)
                 }
 
-                // Write only on release; per-step writes would queue up over BLE
-                Slider(value: $sliderValue, in: 0...Double(speaker.MAX_VOLUME), step: 1) { editing in
-                    isDragging = editing
+                // Write only on release; per-step writes would queue up over BLE.
+                // Don't track drag state from onEditingChanged: on iOS 26 it fires an extra
+                // `true` after release, which would leave it stuck. No `step:`, so round here.
+                Slider(value: $sliderValue, in: 0...Double(speaker.MAX_VOLUME)) { editing in
                     if !editing {
+                        sliderValue = sliderValue.rounded()
                         speaker.volume(data: Data([UInt8(sliderValue)]))
                     }
                 }
@@ -85,7 +86,7 @@ struct ContentView: View {
         }.padding()
         .disabled(!speaker.deviceReady)
         .onChange(of: speaker.volume, initial: true) {
-            if !isDragging, let value = speaker.volume.first {
+            if let value = speaker.volume.first {
                 sliderValue = Double(value)
             }
         }
