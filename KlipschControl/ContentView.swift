@@ -111,6 +111,11 @@ struct ContentView: View {
             Toggle(isOn: Binding(get: { speaker.nightMode }, set: { speaker.setNightMode($0) })) {
                 adjustmentLabel("Night Mode", "Compresses the dynamic range so loud sounds are softer and quiet sounds are cleaner at low volume.", icon: "moon.fill")
             }
+
+            Text("Only one mode can be on at a time. Turning Night Mode off restores Dynamic Bass to how it was before.")
+                .font(.footnote)
+                .foregroundStyle(.secondary)
+                .frame(maxWidth: .infinity, alignment: .leading)
         }.padding()
         .disabled(!speaker.deviceReady)
 
