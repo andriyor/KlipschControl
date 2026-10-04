@@ -57,12 +57,8 @@ In short: use the official app for firmware updates and first setup, KlipschRemo
 * Dynamic Bass and Night Mode are linked on the speaker: turning Night Mode on turns Dynamic Bass off, and turning Night Mode off (or Dynamic Bass on) restores Dynamic Bass to what it was before Night Mode. The two switches show what the speaker does, so turning Dynamic Bass on from Night Mode may need a second tap.
 * Changing the input with the speaker's knob doesn't notify the app, so the highlighted input only updates on the next connect (changes from the IR remote do show up).
 
-# TODO
+## Ideas
 
-- [x] fix bluetooth connection
-- [x] read volume level from a speaker
-- [x] input switching for The Fives
-- [x] EQ presets
-- [x] EQ sliders for bass, mid and treble
-- [x] Dynamic Bass, Night Mode
-- [x] fix the background disconnect timer running off the main thread
+Under consideration, not planned.
+
+- Playback controls (prev / play-pause / next) via the AV transport service `DA6D0FB1`, as in KlipschRemote; play/pause is a stateless toggle, likely Bluetooth input only. Low value: when the phone is the one streaming, the lock screen and Control Center already control playback
