@@ -1,31 +1,60 @@
 # KlipschControl
- 
+
 ## What's this?
 
-The official Klipsch Connect application for IOS has a few issues.
+The official Klipsch Connect application for iOS has a few issues.
 The ones that bothered me most were:
 
-* Slow startup + connection time (5.5 seconds)
+* Slow startup + connection time (~15 seconds with The Fives)
 * Regularly fails to find and connect to the speaker
 * The interface is relatively complex for something which should be a simple remote control
 
-This is an IOS app that serves as a remote control specifically for the Klipsch The Three Plus, with a limited interface that starts up in < 1 second.
+This is an iOS app that serves as a simple, fast remote control for the **Klipsch The Fives**.
+
+It is a fork of [wleese/KlipschControl](https://github.com/wleese/KlipschControl), which was built for the Klipsch The Three Plus. The Bluetooth protocol for The Fives (inputs byte map, characteristics) is ported from [Nixer1337/KlipschRemote](https://github.com/Nixer1337/KlipschRemote).
+
+## Features
+
+* Fast and reliable connection, ~4 seconds versus ~15 for the official app, with no device chooser: reuses the link iOS already has to the speaker (`retrieveConnectedPeripherals`) instead of scanning, and only scans by name as a fallback
+* Restores the connection when iOS relaunches the app, and reconnects on its own after an unexpected disconnect
+* Volume: slider plus −/+ buttons, shown as a percentage; follows the speaker's knob and remote live
+* Input: TV, Bluetooth, Optical, USB, Analog and Phono; the active input is highlighted and follows the speaker's remote
+* Controls stay disabled until the speaker is ready
 
 ## How did we get here?
 
-At first I wanted to control my Klipsch The Three Plus with Home Assistant, but this didn't work.
-After some sleuthing, I learned that [BlueZ doesn't play well with this device](https://github.com/bluez/bluez/issues/712), even though Android, MacOS and IOS worked fine.
+At first the original author wanted to control a Klipsch The Three Plus with Home Assistant, but this didn't work.
+After some sleuthing, they learned that [BlueZ doesn't play well with this device](https://github.com/bluez/bluez/issues/712), even though Android, macOS and iOS worked fine.
 
-With this in mind, I settled on building a very simple app to act as a remote control.
+With this in mind, they settled on building a very simple app to act as a remote control.
+
+## Comparison
+
+|                          | Klipsch Connect (official)                              | [KlipschRemote](https://github.com/Nixer1337/KlipschRemote)                                            | KlipschControl (this app)                                               |
+| ------------------------ | ------------------------------------------------------- | ------------------------------------------------------------------------------------------------------ | ----------------------------------------------------------------------- |
+| platforms                | iOS, Android                                            | Windows / Linux / macOS desktop, web app (Web Bluetooth), CLI, Python library                          | iOS only (SwiftUI + CoreBluetooth)                                      |
+| on iOS                   | native                                                  | web app only, via a Web Bluetooth browser (e.g. Bluefy); didn't connect in my testing on iPhone or iPad | native                                                                  |
+| connect time             | ~15 s, regularly fails to find the speaker              | ~6 s                                                                                                   | ~4 s                                                                    |
+| volume                   | yes                                                     | yes, follows the knob                                                                                  | slider + −/+, follows the knob                                          |
+| input                    | yes                                                     | yes                                                                                                    | yes                                                                     |
+| EQ / modes               | yes                                                     | 3-band EQ + presets, Dynamic Bass, Night Mode, placement                                               | no                                                                      |
+| sub / transport          | yes                                                     | sub level / mute / phase, play-pause / next / previous                                                 | no                                                                      |
+| device settings          | rename, standby, firmware update, setup                 | rename, auto standby, about, factory reset; no firmware update                                         | no                                                                      |
+| speakers                 | soundbars, One / Three Plus, T5 earbuds, The Fives, ... | The Fives / Sevens / Nines                                                                             | The Fives (device name `Klipsch The Fives` is hardcoded)                |
+
+In short: use the official app for firmware updates and first setup, KlipschRemote on desktop and Android for the full feature set, and this app as a simple daily remote on iPhone and iPad.
 
 ## Limitations
 
-In order to remain a simple remote control, I've implemented a subset of features of the official app.
-Because of this, it will be of little use even to other Klipsch The Three Plus owners.
-For example, it only support the inputs I use (Digital and USB Computer).
-
+* Only The Fives is supported, and the device name `Klipsch The Fives` is hardcoded in `Speaker.swift`.
+* Only volume and input are implemented; no EQ, modes, subwoofer or device settings.
+* Switching from Bluetooth to another input and back drops the phone's audio connection: the speaker's Bluetooth light blinks and you have to reconnect it in iOS Settings → Bluetooth. This is the speaker's firmware: it happens with the official app and KlipschRemote too, while switching with the speaker's own knob reconnects audio by itself. iOS apps can't start an audio connection, so the app can't fix it. The app's own control connection is not affected.
+* Changing the input with the speaker's knob doesn't notify the app, so the highlighted input only updates on the next connect (changes from the IR remote do show up).
 
 # TODO
 
-- [ ] read volume level from a speaker
 - [x] fix bluetooth connection
+- [x] read volume level from a speaker
+- [x] input switching for The Fives
+- [ ] EQ presets, bass, night mode (port from KlipschRemote `klipsch_ble/constants.py`)
+- [ ] fix the background disconnect timer running off the main thread
