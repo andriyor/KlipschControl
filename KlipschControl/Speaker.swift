@@ -53,6 +53,7 @@ class Speaker: NSObject, CBCentralManagerDelegate, CBPeripheralDelegate, Observa
     let VOLUME_UUID = "DA6D0FA2-0D18-442C-BABE-F85B5BAA6F11"
     let INPUT_UUID = "DA6D0FD2-0D18-442C-BABE-F85B5BAA6F11"
     let SERVICE_UUID = "DA6D0FA1-0D18-442C-BABE-F85B5BAA6F11"
+    let INPUT_SERVICE_UUID = "DA6D0FD1-0D18-442C-BABE-F85B5BAA6F11"
     let MAX_VOLUME: UInt8 = 36
     
     @Published var bluetoothReady = false
@@ -87,7 +88,7 @@ class Speaker: NSObject, CBCentralManagerDelegate, CBPeripheralDelegate, Observa
             connectedPeripheral?.delegate = self
             deviceReady = false
             characteristics.removeAll()
-            peripheral.discoverServices(nil)
+            peripheral.discoverServices([CBUUID(string: SERVICE_UUID), CBUUID(string: INPUT_SERVICE_UUID)])
             self.statusText = "Connected to speaker"
             return
         }
@@ -162,7 +163,7 @@ class Speaker: NSObject, CBCentralManagerDelegate, CBPeripheralDelegate, Observa
         deviceReady = false
         characteristics.removeAll()
         logger.info("Reset BLE state after connect; discovering services")
-        peripheral.discoverServices(nil)
+        peripheral.discoverServices([CBUUID(string: SERVICE_UUID), CBUUID(string: INPUT_SERVICE_UUID)])
         self.statusText = "Connected to speaker"
     }
     
@@ -179,7 +180,7 @@ class Speaker: NSObject, CBCentralManagerDelegate, CBPeripheralDelegate, Observa
         for service in services {
             self.statusText = "Found service on \(peripheral.name ?? "speaker")"
             logger.info("Discovering characteristics for service \(service.uuid.uuidString)")
-            peripheral.discoverCharacteristics(nil, for: service)
+            peripheral.discoverCharacteristics(UUIDS.map { CBUUID(string: $0) }, for: service)
         }
     }
     
