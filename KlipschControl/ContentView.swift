@@ -38,35 +38,6 @@ struct ContentView: View {
                 .padding(.top)
 
                 VStack(spacing: 16) {
-                    Card(title: "Volume (\(Int(sliderValue.rounded()) * 100 / Int(speaker.MAX_VOLUME))%)", icon: "speaker.wave.2.fill") {
-                        HStack {
-                            Button(action: {
-                                speaker.volumeDown()
-                            }) {
-                                Image(systemName: "minus.circle.fill").font(.title)
-                            }
-
-                            // Write only on release; per-step writes would queue up over BLE.
-                            // Don't track drag state from onEditingChanged: on iOS 26 it fires an extra
-                            // `true` after release, which would leave it stuck. No `step:`, so round here.
-                            Slider(value: $sliderValue, in: 0...Double(speaker.MAX_VOLUME)) { editing in
-                                if !editing {
-                                    sliderValue = sliderValue.rounded()
-                                    speaker.setVolume(UInt8(sliderValue))
-                                }
-                            }
-
-                            Button(action: {
-                                speaker.volumeUp()
-                            }) {
-                                Image(systemName: "plus.circle.fill").font(.title)
-                            }
-                        }
-                    }
-                    .onChange(of: speaker.volume, initial: true) {
-                        sliderValue = Double(speaker.volume)
-                    }
-
                     Card(title: "Input", icon: "rectangle.on.rectangle") {
                         LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 3), spacing: 8) {
                             ForEach(Input.allCases, id: \.self) { input in
@@ -113,6 +84,43 @@ struct ContentView: View {
                 .disabled(!speaker.deviceReady)
             }
             .padding()
+        }
+        // Pinned under the thumb and visible however far the cards scroll
+        .safeAreaInset(edge: .bottom) {
+            VStack(alignment: .leading, spacing: 8) {
+                Label("Volume (\(Int(sliderValue.rounded()) * 100 / Int(speaker.MAX_VOLUME))%)", systemImage: "speaker.wave.2.fill")
+                    .font(.headline)
+
+                HStack {
+                    Button(action: {
+                        speaker.volumeDown()
+                    }) {
+                        Image(systemName: "minus.circle.fill").font(.title)
+                    }
+
+                    // Write only on release; per-step writes would queue up over BLE.
+                    // Don't track drag state from onEditingChanged: on iOS 26 it fires an extra
+                    // `true` after release, which would leave it stuck. No `step:`, so round here.
+                    Slider(value: $sliderValue, in: 0...Double(speaker.MAX_VOLUME)) { editing in
+                        if !editing {
+                            sliderValue = sliderValue.rounded()
+                            speaker.setVolume(UInt8(sliderValue))
+                        }
+                    }
+
+                    Button(action: {
+                        speaker.volumeUp()
+                    }) {
+                        Image(systemName: "plus.circle.fill").font(.title)
+                    }
+                }
+            }
+            .padding()
+            .background(.bar)
+            .disabled(!speaker.deviceReady)
+            .onChange(of: speaker.volume, initial: true) {
+                sliderValue = Double(speaker.volume)
+            }
         }
         .background(Color(.systemGroupedBackground).ignoresSafeArea())
     }
