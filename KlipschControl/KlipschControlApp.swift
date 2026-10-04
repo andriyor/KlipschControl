@@ -21,6 +21,7 @@ class Speaker: NSObject, CBCentralManagerDelegate, CBPeripheralDelegate, Observa
     let VOLUME_UUID = "DA6D0FA2-0D18-442C-BABE-F85B5BAA6F11"
     let INPUT_UUID = "DA6D0FD2-0D18-442C-BABE-F85B5BAA6F11"
     let SERVICE_UUID = "DA6D0FA1-0D18-442C-BABE-F85B5BAA6F11"
+    let MAX_VOLUME: UInt8 = 36
     
     // Publish so our view is updated
     @Published var bluetoothReady = false
@@ -273,11 +274,13 @@ class Speaker: NSObject, CBCentralManagerDelegate, CBPeripheralDelegate, Observa
     
     func volumeUp() {
         let integerValue = self.volume.withUnsafeBytes { $0.load(as: UInt8.self) }
+        guard integerValue < MAX_VOLUME else { return }
         volume(data: Data([integerValue + 1]))
     }
-    
+
     func volumeDown() {
         let integerValue = self.volume.withUnsafeBytes { $0.load(as: UInt8.self) }
+        guard integerValue > 0 else { return }
         volume(data: Data([integerValue - 1]))
     }
     

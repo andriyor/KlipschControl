@@ -81,7 +81,7 @@ struct ContentView: View {
         
         VStack {
             let vol = speaker.volume.withUnsafeBytes { $0.load(as: UInt8.self) }
-            Text("Volume (\(vol))").font(.title3).bold()
+            Text("Volume (\(Int(vol) * 100 / Int(speaker.MAX_VOLUME))%)").font(.title3).bold()
             
             Button(action: {
                 speaker.volumeUp()
