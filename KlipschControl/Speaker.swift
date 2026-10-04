@@ -72,7 +72,12 @@ enum EQPreset: CaseIterable {
 
 let logger = Logger(subsystem: "KlipschControl", category: "Speaker")
 
-let DEVICE_NAME = "Klipsch The Fives"
+// Only the state-restoration key now; changing it would drop restoration for existing installs
+let RESTORE_IDENTIFIER = "Klipsch The Fives"
+
+// The Fives, Sevens and Nines (incl. McLaren) share one protocol. Match any of them like
+// KlipschRemote: by name, or by Klipsch's own service UUIDs, which a renamed speaker still advertises.
+let KLIPSCH_UUID_SUFFIX = "-442C-BABE-F85B5BAA6F11"
 
 class Speaker: NSObject, CBCentralManagerDelegate, CBPeripheralDelegate, ObservableObject {
     
@@ -117,7 +122,7 @@ class Speaker: NSObject, CBCentralManagerDelegate, CBPeripheralDelegate, Observa
     override init() {
         super.init()
         UUIDS = [VOLUME_UUID, INPUT_UUID, NIGHT_MODE_UUID, DYNAMIC_BASS_UUID] + EQ_UUIDS
-        centralManager = CBCentralManager(delegate: self, queue: DispatchQueue.main, options: [CBCentralManagerOptionRestoreIdentifierKey: DEVICE_NAME])
+        centralManager = CBCentralManager(delegate: self, queue: DispatchQueue.main, options: [CBCentralManagerOptionRestoreIdentifierKey: RESTORE_IDENTIFIER])
     }
     
     func triggerScan() {
@@ -126,7 +131,8 @@ class Speaker: NSObject, CBCentralManagerDelegate, CBPeripheralDelegate, Observa
         
         let connectedPeripherals = centralManager.retrieveConnectedPeripherals(withServices: [CBUUID(string: SERVICE_UUID)])
         
-        if let peripheral = connectedPeripherals.first(where: { $0.name == DEVICE_NAME }) ?? connectedPeripherals.first {
+        // Everything returned here exposes Klipsch's volume service
+        if let peripheral = connectedPeripherals.first {
             logger.info("Found already connected peripheral: \(peripheral.name ?? "unknown") [\(peripheral.identifier.uuidString)]")
             connectedPeripheral = peripheral
             connectedPeripheral?.delegate = self
@@ -176,17 +182,14 @@ class Speaker: NSObject, CBCentralManagerDelegate, CBPeripheralDelegate, Observa
     }
     
     func centralManager(_ central: CBCentralManager, didDiscover peripheral: CBPeripheral, advertisementData: [String : Any], rssi RSSI: NSNumber) {
-        let advertisedLocalName = advertisementData[CBAdvertisementDataLocalNameKey] as? String
-        let discoveredName = advertisedLocalName ?? peripheral.name
-        let candidateName = discoveredName ?? peripheral.name ?? advertisedLocalName ?? "unknown"
-        
-        if candidateName.localizedCaseInsensitiveContains("Klipsch") {
-            logger.info("Klipsch discovery candidate: \(candidateName) [\(peripheral.identifier.uuidString)] RSSI: \(RSSI)")
-        }
-        
-        if discoveredName == DEVICE_NAME {
+        let name = advertisementData[CBAdvertisementDataLocalNameKey] as? String ?? peripheral.name ?? "unknown"
+        let services = advertisementData[CBAdvertisementDataServiceUUIDsKey] as? [CBUUID] ?? []
+        let isKlipsch = name.localizedCaseInsensitiveContains("Klipsch")
+            || services.contains { $0.uuidString.uppercased().hasSuffix(KLIPSCH_UUID_SUFFIX) }
+
+        if isKlipsch {
             self.statusText = "Connecting to speaker"
-            logger.info("Matched target device name: \(DEVICE_NAME)")
+            logger.info("Matched Klipsch speaker: \(name) [\(peripheral.identifier.uuidString)] RSSI: \(RSSI)")
             
             connectedPeripheral = peripheral
             connectedPeripheral!.delegate = self

@@ -9,7 +9,7 @@ The ones that bothered me most were:
 * Regularly fails to find and connect to the speaker
 * The interface is relatively complex for something which should be a simple remote control
 
-This is an iOS app that serves as a simple, fast remote control for the **Klipsch The Fives**.
+This is an iOS app that serves as a simple, fast remote control for the **Klipsch The Fives**, and should also work with The Sevens and The Nines (including McLaren editions), which share the same protocol.
 
 It is a fork of [wleese/KlipschControl](https://github.com/wleese/KlipschControl), which was built for the Klipsch The Three Plus. The Bluetooth protocol for The Fives (inputs byte map, characteristics) is ported from [Nixer1337/KlipschRemote](https://github.com/Nixer1337/KlipschRemote).
 
@@ -43,13 +43,14 @@ With this in mind, they settled on building a very simple app to act as a remote
 | Dynamic Bass + Night Mode | one at a time                                           | **bug:** both switches can be shown on, but the speaker actually ends with both off; its switches show what was tapped, not what the speaker reports                         | one at a time; switches follow what the speaker reports                  |
 | sub / transport          | yes                                                     | sub level / mute / phase, play-pause / next / previous                                                 | no                                                                      |
 | device settings          | rename, standby, firmware update, setup                 | rename, auto standby, about, factory reset; no firmware update                                         | no                                                                      |
-| speakers                 | soundbars, One / Three Plus, T5 earbuds, The Fives, ... | The Fives / Sevens / Nines                                                                             | The Fives (device name `Klipsch The Fives` is hardcoded)                |
+| speakers                 | soundbars, One / Three Plus, T5 earbuds, The Fives, ... | The Fives / Sevens / Nines                                                                             | The Fives (tested), Sevens / Nines (same protocol, untested)            |
 
 In short: use the official app for firmware updates and first setup, KlipschRemote on desktop and Android for the full feature set, and this app as a simple daily remote on iPhone and iPad.
 
 ## Limitations
 
-* Only The Fives is supported, and the device name `Klipsch The Fives` is hardcoded in `Speaker.swift`.
+* Only tested on The Fives. The Sevens and The Nines use the same protocol according to KlipschRemote, but haven't been tried.
+* The app connects to the first Klipsch speaker it finds (by name, or by Klipsch's service IDs if it was renamed); there's no picker for choosing between several speakers.
 * Only volume, input, EQ presets, Dynamic Bass and Night Mode are implemented; no EQ sliders, speaker placement, subwoofer or device settings.
 * Switching from Bluetooth to another input and back drops the phone's audio connection: the speaker's Bluetooth light blinks and you have to reconnect it in iOS Settings → Bluetooth. This is the speaker's firmware: it happens with the official app and KlipschRemote too, while switching with the speaker's own knob reconnects audio by itself. iOS apps can't start an audio connection, so the app can't fix it. The app's own control connection is not affected.
 * Dynamic Bass and Night Mode are linked on the speaker: turning Night Mode on turns Dynamic Bass off, and turning Night Mode off (or Dynamic Bass on) restores Dynamic Bass to what it was before Night Mode. The two switches show what the speaker does, so turning Dynamic Bass on from Night Mode may need a second tap.
