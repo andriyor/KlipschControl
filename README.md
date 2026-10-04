@@ -69,6 +69,29 @@ Under consideration, not planned.
 - Playback controls (prev / play-pause / next) via the AV transport service `DA6D0FB1`, as in KlipschRemote; play/pause is a stateless toggle, likely Bluetooth input only. Low value: when the phone is the one streaming, the lock screen and Control Center already control playback
 - Follow input changes made with the speaker's knob: no characteristic notifies on them (checked all 30, including the undocumented `DA6D0FD3`–`FD5`), but reading the input returns the new value, so re-reading it every ~2 s while the app is open would catch them
 
+## Development
+
+The quickest loop is pressing **Run** in Xcode. From the command line:
+
+```sh
+# Build for the simulator (it has no Bluetooth, so it only shows the "Turn on Bluetooth" screen)
+xcodebuild -project KlipschControl.xcodeproj -scheme KlipschControl \
+  -destination 'generic/platform=iOS Simulator' -derivedDataPath build build
+xcrun simctl install booted build/Build/Products/Debug-iphonesimulator/KlipschControl.app
+xcrun simctl launch booted <your bundle id>
+
+# Build, install and launch on a connected device (see Install for signing)
+xcrun devicectl list devices
+xcodebuild -project KlipschControl.xcodeproj -scheme KlipschControl \
+  -destination 'platform=iOS,name=<device name>' -derivedDataPath build -allowProvisioningUpdates build
+xcrun devicectl device install app --device <identifier> build/Build/Products/Debug-iphoneos/KlipschControl.app
+xcrun devicectl device process launch --device <identifier> --console <your bundle id>
+```
+
+* **Logs:** the app logs with subsystem `KlipschControl`. Watch them in Console.app (select the device, filter by `subsystem:KlipschControl`), or for the simulator with `xcrun simctl spawn booted log stream --predicate 'subsystem == "KlipschControl"'`. `--console` above also prints the volume as the speaker reports it.
+* **Formatting:** the code follows [swift-format](https://github.com/swiftlang/swift-format)'s defaults (`.swift-format`). Check with `xcrun swift-format lint -r KlipschControl`, fix with `xcrun swift-format format -i -r KlipschControl`.
+* **Protocol:** to see what a characteristic does, [ble-probe](https://github.com/andriyor/ble-probe) prints every notification from the speaker. Close the app first so the speaker isn't already connected to your phone.
+
 ## Inspired by and ported from
 
 * A fork of [wleese/KlipschControl](https://github.com/wleese/KlipschControl), which was built for the Klipsch The Three Plus after BlueZ (and so Home Assistant) [couldn't talk to that speaker](https://github.com/bluez/bluez/issues/712). It has since been almost completely rewritten: over 80% of the current Swift code is new, and what remains from the original is mostly the app's skeleton (the CoreBluetooth delegate methods, the app and view structure, a few status messages).
