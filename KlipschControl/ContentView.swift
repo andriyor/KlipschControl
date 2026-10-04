@@ -15,6 +15,10 @@ let analog = Data([0x04])
 
 struct ContentView: View {
     @StateObject var speaker: Speaker
+    // Local slider position, so speaker notifications don't move it while dragging
+    @State private var sliderValue = 0.0
+    @State private var isDragging = false
+
     init(speaker: Speaker) {
         _speaker = StateObject(wrappedValue: speaker)
     }
@@ -80,30 +84,35 @@ struct ContentView: View {
         }.padding().padding()
         
         VStack {
-            let vol = speaker.volume.withUnsafeBytes { $0.load(as: UInt8.self) }
-            Text("Volume (\(Int(vol) * 100 / Int(speaker.MAX_VOLUME))%)").font(.title3).bold()
-            
-            Button(action: {
-                speaker.volumeUp()
-            }) {
-                Image(systemName: "arrow.up").bold()
-                    .padding(.horizontal, 60)
-                    .padding(.vertical, 30)
-                    .background(Color.green)
-                    .foregroundColor(.black)
-                    .cornerRadius(10)
-            }
-            Button(action: {
-                speaker.volumeDown()
-            }) {
-                Image(systemName: "arrow.down").bold()
-                    .padding(.horizontal, 60)
-                    .padding(.vertical, 30)
-                    .background(Color.red)
-                    .foregroundColor(.black)
-                    .cornerRadius(10)
+            Text("Volume (\(Int(sliderValue) * 100 / Int(speaker.MAX_VOLUME))%)").font(.title3).bold()
+
+            HStack {
+                Button(action: {
+                    speaker.volumeDown()
+                }) {
+                    Image(systemName: "minus.circle.fill").font(.title)
+                }
+
+                // Write only on release; per-step writes would queue up over BLE
+                Slider(value: $sliderValue, in: 0...Double(speaker.MAX_VOLUME), step: 1) { editing in
+                    isDragging = editing
+                    if !editing {
+                        speaker.volume(data: Data([UInt8(sliderValue)]))
+                    }
+                }
+
+                Button(action: {
+                    speaker.volumeUp()
+                }) {
+                    Image(systemName: "plus.circle.fill").font(.title)
+                }
             }
         }.padding()
+        .onChange(of: speaker.volume, initial: true) {
+            if !isDragging {
+                sliderValue = Double(speaker.volume.withUnsafeBytes { $0.load(as: UInt8.self) })
+            }
+        }
         
         Spacer()
         
