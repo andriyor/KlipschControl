@@ -99,3 +99,7 @@ xcrun devicectl device process launch --device <identifier> --console <your bund
 * A fork of [wleese/KlipschControl](https://github.com/wleese/KlipschControl), which was built for the Klipsch The Three Plus after BlueZ (and so Home Assistant) [couldn't talk to that speaker](https://github.com/bluez/bluez/issues/712). It has since been almost completely rewritten: over 80% of the current Swift code is new, and what remains from the original is mostly the app's skeleton (the CoreBluetooth delegate methods, the app and view structure, a few status messages).
 * The Bluetooth protocol for The Fives (input byte map, characteristics, EQ encoding, model numbers) is ported from [Nixer1337/KlipschRemote](https://github.com/Nixer1337/KlipschRemote).
 * The protocol was checked against the speaker with [ble-probe](https://github.com/andriyor/ble-probe), a small Python script using [bleak](https://github.com/hbldh/bleak) that subscribes to every characteristic and prints each change, to see which bytes the knob and remote update.
+
+## License
+
+MIT, see [LICENSE](LICENSE). The protocol details ported from Nixer1337/KlipschRemote are used under the [Apache License 2.0](https://github.com/Nixer1337/KlipschRemote/blob/main/LICENSE).
