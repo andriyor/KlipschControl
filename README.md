@@ -26,14 +26,16 @@ This is an iOS app that serves as a simple, fast remote control for the **Klipsc
 
 ## Install
 
-The app isn't on the App Store; build it with Xcode and run it on your own device.
+The app is on its way to the App Store, where it'll be called Remote for Klipsch (KRemote on the home screen). Until then, build it with Xcode and run it on your own device.
 
 1. Open `KlipschControl.xcodeproj` in Xcode 26.2 or later.
 2. In the KlipschControl target → **Signing & Capabilities**, pick your **Team** and change the **Bundle Identifier** to something unique (e.g. `com.yourname.KlipschControl`).
-3. Connect an iPhone or iPad running iOS / iPadOS 26.2 or later, turn on **Settings → Privacy & Security → Developer Mode**, select it as the run destination and press **Run**.
+3. Connect an iPhone or iPad running iOS / iPadOS 17 or later, turn on **Settings → Privacy & Security → Developer Mode**, select it as the run destination and press **Run**.
 4. On first launch, trust the developer in **Settings → General → VPN & Device Management**.
 
 With a free Apple ID the app stops opening after 7 days and has to be run from Xcode again; with a paid Apple Developer Program membership it lasts a year.
+
+The app collects no data; see the [privacy policy](PRIVACY.md).
 
 ## Comparison
 
