@@ -268,7 +268,7 @@
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = KlipschControl/Info.plist;
-				INFOPLIST_KEY_CFBundleDisplayName = "Remote for Klipsch";
+				INFOPLIST_KEY_CFBundleDisplayName = KRemote;
 				INFOPLIST_KEY_NSBluetoothAlwaysUsageDescription = "Connects to your speaker to control volume, input and EQ.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
@@ -303,7 +303,7 @@
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = KlipschControl/Info.plist;
-				INFOPLIST_KEY_CFBundleDisplayName = "Remote for Klipsch";
+				INFOPLIST_KEY_CFBundleDisplayName = KRemote;
 				INFOPLIST_KEY_NSBluetoothAlwaysUsageDescription = "Connects to your speaker to control volume, input and EQ.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
