@@ -1,4 +1,4 @@
-# KlipschControl
+# Remote for Klipsch
 
 ## What's this?
 
@@ -11,7 +11,7 @@ The ones that bothered me most were:
 
 This is an iOS app that serves as a simple, fast remote control for the **Klipsch The Fives**, and should also work with The Sevens and The Nines (including McLaren editions), which share the same protocol.
 
-<img src="https://github.com/user-attachments/assets/e63eb3f3-245a-4315-a473-230ddb0292eb" width="300" alt="KlipschControl screenshot">
+<img src="https://github.com/user-attachments/assets/e63eb3f3-245a-4315-a473-230ddb0292eb" width="300" alt="Remote for Klipsch screenshot">
 
 ## Features
 
@@ -37,7 +37,7 @@ With a free Apple ID the app stops opening after 7 days and has to be run from X
 
 ## Comparison
 
-|                           | KlipschControl (this app)                                                         | [Klipsch Connect](https://apps.apple.com/app/id1490524287) (official) | [KlipschRemote](https://github.com/Nixer1337/KlipschRemote)                                                                                          |
+|                           | Remote for Klipsch (this app)                                                     | [Klipsch Connect](https://apps.apple.com/app/id1490524287) (official) | [KlipschRemote](https://github.com/Nixer1337/KlipschRemote)                                                                                          |
 | ------------------------- | --------------------------------------------------------------------------------- | --------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
 | platforms                 | iOS only (SwiftUI + CoreBluetooth)                                                | iOS, Android                                                          | Windows / Linux / macOS desktop, web app (Web Bluetooth), CLI, Python library                                                                        |
 | on iOS                    | iOS app (SwiftUI), installed from Xcode                                           | App Store app                                                         | web app only, via a Web Bluetooth browser (e.g. Bluefy); didn't connect in my testing on iPhone or iPad                                              |
