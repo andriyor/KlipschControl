@@ -92,6 +92,7 @@ xcrun devicectl device process launch --device <identifier> --console <your bund
 
 * **Logs:** the app logs with subsystem `KlipschControl`. Watch them in Console.app (select the device, filter by `subsystem:KlipschControl`), or for the simulator with `xcrun simctl spawn booted log stream --predicate 'subsystem == "KlipschControl"'`. `--console` above also prints the volume as the speaker reports it.
 * **Formatting:** the code follows [swift-format](https://github.com/swiftlang/swift-format)'s defaults (`.swift-format`). Check with `xcrun swift-format lint -r KlipschControl`, fix with `xcrun swift-format format -i -r KlipschControl`.
+* **Icon:** drawn by `scripts/icon.swift` with Core Graphics. After editing it, regenerate with `swift scripts/icon.swift KlipschControl/Assets.xcassets/AppIcon.appiconset/AppIcon.png`.
 * **Protocol:** to see what a characteristic does, [ble-probe](https://github.com/andriyor/ble-probe) prints every notification from the speaker. Close the app first so the speaker isn't already connected to your phone.
 
 ## Inspired by and ported from
